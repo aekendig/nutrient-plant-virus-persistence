@@ -53,6 +53,7 @@ dat %>%
 dat %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
   stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_cl_boot") +
+  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_cl_boot", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1), color = "blue", alpha = 0.5) + 
   facet_grid(target ~ inoc, scales = "free") # PAV growth is delayed by coinfection, RPV is enhanced (but more variable)
 
@@ -60,12 +61,14 @@ dat %>%
 dat %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
   stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_cl_boot") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_cl_boot", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1 & target == "PAV"), color = "blue", alpha = 0.5) + 
   facet_grid(inoc ~ nutrient, scales = "free") # the peak in coinfection is driven by low nutrients, but it is driven by N when PAV is alone
 
 dat %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
   stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_cl_boot") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_cl_boot", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1 & target == "RPV"), color = "blue", alpha = 0.5) + 
   facet_grid(inoc ~ nutrient, scales = "free") # it looks like there are multiple peaks in the temporal dynamics and they occur at different times depending on the nutrient and inoculation treatment, highest peaks with P addition
 
@@ -73,11 +76,41 @@ dat %>%
 dat %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
   stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_cl_boot") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_cl_boot", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1 & target == "PAV" & inoc == "coinfection"), color = "blue", alpha = 0.5) + 
   facet_wrap(~nutrient, nrow = 2, scales = "free") # peaks in the middle with high nutrients (like in single infection), especially P, peaks later with lower
 
 
-# day of peak
-# height of peak
-# overall average titer
-# proportion successfully infected
+#### overall average titer ####
+
+# titer = dnorm(u, sd)
+# u = N * P * Co
+# variation: wells, dpi (no linear trend), round, qPCR run
+
+
+#### day and height of highest peak ####
+
+dat %>%
+  filter(quant_zero == 0 & (inoc == "coinfection" | inoc == target)) %>%
+  group_by(target, inoc, nutrient, dpi) %>%
+  summarise(mean_quant = mean(quant_adj),
+            se_quant = sd(quant_adj)/sqrt(length(quant_adj))) %>%
+  filter(mean_quant == max(mean_quant)) %>%
+  select(target, inoc, nutrient, mean_quant, se_quant, dpi)
+
+# need to re-do this, taking into account variation among wells and then among replicates
+
+# look at low coinfection for PAV on day 26
+dat %>%
+  filter(inoc == "coinfection" & target == "PAV" & dpi == 26) %>%
+  select(round, replicate, nutrient, q_group, well, quant_adj) %>%
+  arrange(nutrient, round, replicate, q_group) %>%
+  data.frame()
+
+
+
+
+
+#### cumulative titer ####
+
+#### proportion successfully infected ####
