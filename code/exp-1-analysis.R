@@ -5,6 +5,10 @@ source("./code/exp-1-qPCR-raw-data-processing.R")
 # loads tidyverse
 # sets working directory to data folder
 
+# load libraries
+library(rethinking)
+library(tidybayes.rethinking)
+
 # clear all except dataset
 rm(list = setdiff(ls(), c("dat")))
 
@@ -17,7 +21,7 @@ dpi <- tibble(
 )
 
 dat <- dat %>%
-  filter(remove == 0 ) %>%
+  filter(remove == 0 & material == "shoot") %>%
   mutate(quant_adj = case_when(target == "PAV" & quant_adj < PAVmin ~ 0,
                                target == "RPV" & quant_adj < RPVmin ~ 0,
                                is.na(quant_adj) ~ 0,
@@ -48,6 +52,12 @@ dat <- dat %>%
 dat %>%
   ggplot() +
   geom_histogram(aes(x = quant_adj, fill = quant_zero))
+
+# log-tranformed values
+dat %>%
+  filter(quant_zero == 0) %>%
+  ggplot() +
+  geom_histogram(aes(x = log(quant_adj)))
 
 # look at mean values
 dat %>%
@@ -81,11 +91,60 @@ dat %>%
   facet_wrap(~nutrient, nrow = 2, scales = "free") # peaks in the middle with high nutrients (like in single infection), especially P, peaks later with lower
 
 
-#### overall average titer ####
+#### overall average titer for successful infections ####
 
-# titer = dnorm(u, sd)
-# u = N * P * Co
-# variation: wells, dpi (no linear trend), round, qPCR run
+# edit data
+
+d.at <- dat %>%
+  filter(quant_zero == 0 &
+           inoc %in% c("PAV", "coinfection", "RPV")) %>%
+  mutate(co = ifelse(inoc == "coinfection", 1, 0),
+         log_quant = log(quant_adj),
+         exp_round = round)
+
+## PAV model ##
+
+# data
+d.at.p <- d.at %>%
+  filter(target == "PAV" &
+           inoc != "RPV") %>%
+  select(log_quant, q_group, well, exp_round, dpi, high_P, high_N, co) %>%
+  data.frame() %>%
+  mutate(q_group_n = as.factor(q_group) %>% as.numeric(),
+         well_n = as.factor(well) %>% as.numeric(),
+         exp_round_n = as.factor(exp_round) %>% as.numeric(),
+         dpi_n = as.factor(dpi) %>% as.numeric())
+
+# model
+m.at.p <- map2stan(
+  alist(
+    log_quant ~ dnorm(mu, sigma),
+    mu <- a + 
+      a_q_group[q_group_n] + 
+      a_well[well_n] + 
+      a_exp_round[exp_round_n] + 
+      a_dpi[dpi_n] + 
+      bp * high_P +
+      bn * high_N +
+      bc * co + 
+      bpn * high_P * high_N +
+      bpc * high_P * co +
+      bnc * high_N * co +
+      bnpc * high_P * high_N * co,
+    a ~ dnorm(0, 100),
+    a_q_group[q_group_n] ~ dnorm(0, sigma_q_group),
+    a_well[well_n] ~ dnorm(0, sigma_well),
+    a_exp_round[exp_round_n] ~ dnorm(0, sigma_exp_round),
+    a_dpi[dpi_n] ~ dnorm(0, sigma_dpi),
+    c(bp, bn, bc, bpn, bpc, bnc, bnpc) ~ dnorm(0, 10),
+    c(sigma, sigma_q_group, sigma_well, sigma_exp_round, sigma_dpi) ~ dcauchy(0, 1) 
+  ),
+  data = d.at.p, warmup = 1000, iter = 6000, chains = 3, cores = 2)
+
+# examine model
+plot(m.at.p)
+precis(m.at.p)
+ ## start here - make sure strcutre makes sense and that well should be kept in
 
 
 #### day and height of highest peak ####
