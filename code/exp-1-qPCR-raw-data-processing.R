@@ -351,7 +351,7 @@ qdat2 %>%
   filter(log10(quantity) < 0 & log10(quant_adj) > 0.5) # these are too low to be reliable
 
 qdat2 %>%
-  filter(log10(quantity) < 1 & log10(quant_adj) > 2) # from group 35, which had a high conncentration contamination, so lower concentration sampls will be left out
+  filter(log10(quantity) < 1 & log10(quant_adj) > 2) # from group 35, which had a high conncentration contamination, so lower concentration samples will be left out
 
 
 #### create sample dataset ####
