@@ -11,6 +11,7 @@ source("./code/exp-1-qPCR-raw-data-processing.R")
 
 # load libraries
 library(brms)
+library(tidyverse)
 library(tidybayes)
 library(bayesplot)
 
@@ -87,24 +88,20 @@ dat %>%
 # not a strong trend due to wells and the ones that stick out have fewer replicates
 
 # look at PAV and RPV concentrations in same well
-dat %>%
+wcdat <- dat %>%
   select(q_group, well, target, cycle) %>%
   spread(target, cycle) %>%
   group_by(well) %>%
-  summarise(mPAV = mean(PAV, na.rm = T), seP = sd(PAV, na.rm = T)/sqrt(length(!is.na(PAV))), mRPV = mean(RPV, na.rm = T), seR = sd(RPV, na.rm = T)/sqrt(length(!is.na(RPV)))) %>%
-  ggplot(aes(x = mPAV, y = mRPV)) +
+  summarise(mPAV = mean(PAV, na.rm = T), seP = sd(PAV, na.rm = T)/sqrt(length(!is.na(PAV))), mRPV = mean(RPV, na.rm = T), seR = sd(RPV, na.rm = T)/sqrt(length(!is.na(RPV))))
+
+ggplot(wcdat, aes(x = mPAV, y = mRPV)) +
   geom_point() +
   geom_errorbar(aes(ymin = mRPV - seR, ymax = mRPV + seR)) +
   geom_errorbarh(aes(xmin = mPAV - seP, xmax = mPAV + seP)) +
   geom_smooth(method = "lm")
 # wells that produce higher PAV values don't necessarily produce high RPV values and vice versa
 
-dat %>%
-  select(q_group, well, target, cycle) %>%
-  spread(target, cycle) %>%
-  group_by(well) %>%
-  summarise(mPAV = mean(PAV, na.rm = T), seP = sd(PAV, na.rm = T)/sqrt(length(!is.na(PAV))), mRPV = mean(RPV, na.rm = T), seR = sd(RPV, na.rm = T)/sqrt(length(!is.na(RPV)))) %$% 
-  cor.test(mRPV, mPAV)
+cor.test(wcdat$mRPV, wcdat$mPAV)
 # not a strong correlation - well does not seem to affect concentration
 
 # correlation between well's distance from mean and number of reps
@@ -176,7 +173,7 @@ dat2 <- dat %>%
                           is.na(quant) ~ 0,
                           TRUE ~ quant),
     quant_zero = case_when(quant_adj == 0 ~ 1,
-                           TRUE ~ 0))
+                           TRUE ~ 0)) 
 
 # check for same sample in multiple qPCR groups
 dups <-dat2 %>%
@@ -197,24 +194,24 @@ dups %>%
 # look at mean values
 dat2 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_cl_boot") +
-  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_cl_boot", geom = "line") +
+  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_se") +
+  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1), color = "blue", alpha = 0.5) + 
   facet_grid(target ~ inoc, scales = "free") # PAV growth is delayed by coinfection, RPV is enhanced (but more variable)
 
 # look at mean values by nutrient - PAV
 dat2 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_cl_boot") +
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_cl_boot", geom = "line") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_se") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1 & target == "PAV"), color = "blue", alpha = 0.5) + 
   facet_grid(inoc ~ nutrient, scales = "free") # the peak in coinfection is driven by low nutrients, but it is driven by N when PAV is alone
 
 # look at PAV in coinfection
 dat2 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_cl_boot") +
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_cl_boot", geom = "line") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1 & target == "PAV" & inoc == "coinfection"), color = "blue", alpha = 0.5) + 
   facet_wrap(~nutrient, nrow = 2, scales = "free") # peaks in the middle with high nutrients (like in single infection), especially P, peaks later with lower
 
@@ -222,15 +219,15 @@ dat2 %>%
 dat2 %>%
   filter(quant_zero == 0 & target == "PAV" & !(inoc %in% c("healthy", "RPV"))) %>%
   ggplot(aes(x = dpi, y = log10(quant_adj))) + 
-  stat_summary(fun.data = "mean_cl_boot") +
-  stat_summary(fun.data = "mean_cl_boot", geom = "line") +
+  stat_summary(fun.data = "mean_se") +
+  stat_summary(fun.data = "mean_se", geom = "line") +
   facet_grid(inoc ~ nutrient, scales = "free")
 
 # look at mean values by nutrient - RPV
 dat2 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_cl_boot") +
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_cl_boot", geom = "line") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_se") +
+  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat, quant_zero == 1 & target == "RPV"), color = "blue", alpha = 0.5) + 
   facet_grid(inoc ~ nutrient, scales = "free") # it looks like there are multiple peaks in the temporal dynamics and they occur at different times depending on the nutrient and inoculation treatment, highest peaks with P addition
 
@@ -238,12 +235,12 @@ dat2 %>%
 dat2 %>%
   filter(quant_zero == 0 & target == "RPV" & !(inoc %in% c("healthy", "PAV"))) %>%
   ggplot(aes(x = dpi, y = log10(quant_adj))) + 
-  stat_summary(fun.data = "mean_cl_boot") +
-  stat_summary(fun.data = "mean_cl_boot", geom = "line") +
+  stat_summary(fun.data = "mean_se") +
+  stat_summary(fun.data = "mean_se", geom = "line") +
   facet_grid(inoc ~ nutrient, scales = "free")
 
 
-#### overall average titer for successful infections ####
+#### format data for models ####
 
 # edit data
 d.at <- dat2 %>%
@@ -253,11 +250,12 @@ d.at <- dat2 %>%
          log_quant = log10(quant_adj),
          exp_round = round,
          conc = quant_adj/mass_ext.mg,
-         log_conc = log10(conc))
+         log_conc = log10(conc),
+         quant_rd = round(quant_adj))
 
 # concentration values
 d.at %>%
-  ggplot(aes(x = conc)) +
+  ggplot(aes(x = quant_rd)) +
   geom_histogram() + 
   facet_wrap(~target, scales = "free")
 
@@ -268,32 +266,69 @@ d.at %>%
 
 # replicates within same round and qPCR group
 d.at %>%
-  group_by(target, exp_round, dpi, inoc, high_N, high_P,  q_groups) %>%
+  group_by(target, exp_round, dpi, inoc, high_N, high_P, q_group) %>%
   summarise(reps = length(unique(sample))) %>%
   filter(reps >1) # 19
 
-
-## PAV model ##
-
-# data
+# data by virus
 d.at.p <- d.at %>%
   filter(target == "PAV" & inoc != "RPV")
 
-# concentration model
-m.ac.p <- brm(data = d.at.p, family = gaussian,
+d.at.r <- d.at %>%
+  filter(target == "RPV" & inoc != "PAV")
+
+
+#### log-transformed models, uninformative priors ####
+
+# PAV model
+m.lu.p <- brm(data = d.at.p, family = gaussian,
               log_conc ~ co * high_N * high_P,
               autocor = cor_ar(~time),
-              prior <- c(prior(normal(0, 100), class = Intercept),
-                         prior(normal(0, 10), class = b)),
+              prior <- c(prior(normal(0, 10), class = Intercept),
+                         prior(normal(0, 1), class = b)),
               iter = 6000, warmup = 1000, chains = 3, cores = 2)
 
+# inspect model
+summary(m.lu.p) # coinfection increases concentration
+plot(m.lu.p) # convergence among chains
+plot(marginal_effects(m.lu.p), points = T)
+pp_check(m.lu.p) # model distributions slightly higher
+
 # save model
-save(m.ac.p, file = "./output/average-concentration-pav.rda")
+save(m.lu.p, file = "./output/exp-1-analysis-log-uninformative-pav.rda")
+
+# RPV model 
+m.lu.r <- update(m.lu.p, newdata = d.at.r)
 
 # inspect model
-summary(m.ac.p) # coinfection increases concentration
-marginal_effects(m.ac.p)
-plot(m.ac.p)
+summary(m.lu.r) # no strong effects
+plot(m.lu.r) # convergence among chains
+plot(marginal_effects(m.lu.r), points = T)
+pp_check(m.lu.r) # pretty close
+
+# save model
+save(m.lu.r, file = "./output/exp-1-analysis-log-uninformative-rpv.rda")
+
+
+#### count models, uninformative priors ####
+
+# check mean and variance
+mean(d.at.p$conc_rd) #460
+var(d.at.p$conc_rd) # much larger variance
+mean(d.at.r$conc_rd) # 10683
+var(d.at.r$conc_rd) # much larger variance
+
+#### start here - set up priors and run model ####
+
+# PAV model
+m.cu.p <- brm(data = d.at.p, family = negbinomial(),
+              quant_rd ~ offset(mass_ext.mg) + co * high_N * high_P,
+              autocor = cor_ar(~time),
+              prior <- c(prior(normal(460, 100), class = Intercept),
+                         prior(normal(0, 1), class = b)),
+              iter = 6000, warmup = 1000, chains = 1, cores = 1)
+
+#### specific priors ####
 
 # with more specific priors
 # use the estimates for coinfection and N addition from CL's models for the mean, multiply the standard error from her models by 10
@@ -313,29 +348,6 @@ save(m.acp.p, file = "./output/average-concentration-pav-cl-priors.rda")
 # inspect model
 summary(m.acp.p) # more specific priors hardly changed output
 plot(m.acp.p)
-
-
-## RPV model ##
-
-# data
-d.at.r <- d.at %>%
-  filter(target == "RPV" & inoc != "PAV")
-
-# concentration model
-m.ac.r <- brm(data = d.at.r, family = gaussian,
-              log_conc ~ co * high_N * high_P,
-              autocor = cor_ar(~time),
-              prior <- c(prior(normal(0, 100), class = Intercept),
-                         prior(normal(0, 10), class = b)),
-              iter = 6000, warmup = 1000, chains = 3, cores = 2)
-
-# save model
-save(m.ac.r, file = "./output/average-concentration-rpv.rda")
-
-# inspect model
-summary(m.ac.r) # no significant effect
-marginal_effects(m.ac.r)
-plot(m.ac.r)
 
 # with more specific priors
 # use the estimates for coinfection and N addition from CL's models for the mean, multiply the standard error from her models by 10
@@ -357,7 +369,7 @@ summary(m.acp.r) # similar to model without specific priors
 plot(m.acp.r)
 
 
-#### save dat afor plotting ####
+#### save data for plotting ####
 
 # merge PAV and RPV
 d.out = full_join(d.at.p, d.at.r)
