@@ -16,8 +16,8 @@ library(cowplot)
 dat <- read_csv("./output/exp-1-analysis-data.csv")
 
 # load models
-load("./output/average-concentration-pav-cl-priors.rda")
-load("./output/average-concentration-rpv-cl-priors.rda")
+load("./output/exp-1-analysis-log-informative-rpv.rda")
+load("./output/exp-1-analysis-log-informative-pav.rda")
 
 
 #### edit data ####
@@ -29,8 +29,8 @@ dat <- dat %>%
          nutrient = fct_relevel(nutrient, "low", "N", "P"))
 
 # posterior samples
-postr <- posterior_samples(m.acp.r)
-postp <- posterior_samples(m.acp.p)
+postr <- posterior_samples(m.li.r)
+postp <- posterior_samples(m.li.p)
 
 # rename columns
 colnames(postr) <- colnames(postp) <- c("int", "co", "N", "P", "co_N", "co_P", "NP", "co_NP", "ar", "sigma", "lp")
@@ -136,8 +136,8 @@ plotB <- ggplot(filter(dat, target == "RPV"), aes(x = dpi, y = log_conc, colour 
 #### figure of model estimates ####
 
 # annotation text
-ann_textp <- data.frame(effect = c(0.64, 0.75), Nutrient = c("N+P", "N+P"), lab = c("single infection", "coinfection"), Inoculation = c("single", "coinfection"))
-ann_textr <- data.frame(effect = c(0.8, 0.96), Nutrient = c("N+P", "N+P"), lab = c("single infection", "coinfection"), Inoculation = c("single", "coinfection"))
+ann_textp <- data.frame(effect = c(0.52, 0.65), Nutrient = c("N+P", "N+P"), lab = c("single infection", "coinfection"), Inoculation = c("single", "coinfection"))
+ann_textr <- data.frame(effect = c(0.66, 0.82), Nutrient = c("N+P", "N+P"), lab = c("single infection", "coinfection"), Inoculation = c("single", "coinfection"))
 
 # PAV
 plotC <- ggplot(slopep, aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient, linetype = Inoculation)) +
