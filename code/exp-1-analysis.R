@@ -292,7 +292,7 @@ m.lu.p <- brm(data = d.at.p, family = gaussian,
 summary(m.lu.p) # coinfection increases concentration
 plot(m.lu.p) # convergence among chains
 plot(marginal_effects(m.lu.p), points = T)
-pp_check(m.lu.p) # model distributions slightly higher
+pp_check(m.lu.p, nsamples = 100) # model distributions slightly higher
 
 # save model
 save(m.lu.p, file = "./output/exp-1-analysis-log-uninformative-pav.rda")
@@ -304,7 +304,7 @@ m.lu.r <- update(m.lu.p, newdata = d.at.r)
 summary(m.lu.r) # no strong effects
 plot(m.lu.r) # convergence among chains
 plot(marginal_effects(m.lu.r), points = T)
-pp_check(m.lu.r) # pretty close
+pp_check(m.lu.r, nsamples = 100) # pretty close
 
 # save model
 save(m.lu.r, file = "./output/exp-1-analysis-log-uninformative-rpv.rda")
@@ -318,55 +318,75 @@ var(d.at.p$conc_rd) # much larger variance
 mean(d.at.r$conc_rd) # 10683
 var(d.at.r$conc_rd) # much larger variance
 
-#### start here - set up priors and run model ####
-
-# PAV model
+# PAV model (you can't currently implement autoregressive models, time included as a random effect)
 m.cu.p <- brm(data = d.at.p, family = negbinomial(),
-              quant_rd ~ offset(mass_ext.mg) + co * high_N * high_P,
-              autocor = cor_ar(~time),
+              quant_rd ~ offset(mass_ext.mg) + co * high_N * high_P + (1|time),
               prior <- c(prior(normal(460, 100), class = Intercept),
                          prior(normal(0, 1), class = b)),
-              iter = 6000, warmup = 1000, chains = 1, cores = 1)
-
-#### specific priors ####
-
-# with more specific priors
-# use the estimates for coinfection and N addition from CL's models for the mean, multiply the standard error from her models by 10
-m.acp.p <- update(m.ac.p, 
-                  prior = c(prior(normal(0.23, 5.9), class = b, coef = co),
-                            prior(normal(-0.22, 2.3), class = b, coef = high_N),
-                            prior(normal(0, 10), class = b, coef = high_P),
-                            prior(normal(0, 10), class = b, coef = co:high_N),
-                            prior(normal(0, 10), class = b, coef = co:high_P),
-                            prior(normal(0, 10), class = b, coef = high_N:high_P),
-                            prior(normal(0, 10), class = b, coef = co:high_N:high_P),
-                            prior(normal(0, 100), class = Intercept)))
-
-# save model
-save(m.acp.p, file = "./output/average-concentration-pav-cl-priors.rda")
+              iter = 6000, warmup = 1000, chains = 1, cores = 1,
+              control = list(adapt_delta = 0.99))
 
 # inspect model
-summary(m.acp.p) # more specific priors hardly changed output
-plot(m.acp.p)
+summary(m.cu.p)
+yrep.cu.p <- posterior_predict(m.cu.p, draws = 100)
+ppc_dens_overlay(log10(d.at.p$quant_rd), log10(yrep.cu.p)) # not a very good fit
 
-# with more specific priors
-# use the estimates for coinfection and N addition from CL's models for the mean, multiply the standard error from her models by 10
-m.acp.r <- update(m.ac.r, 
-                  prior = c(prior(normal(-0.15, 3.0), class = b, coef = co),
-                            prior(normal(-0.09, 2.0), class = b, coef = high_N),
-                            prior(normal(0.36, 3.3), class = b, coef = high_P),
-                            prior(normal(-0.24, 3.8), class = b, coef = co:high_N),
-                            prior(normal(0, 10), class = b, coef = co:high_P),
-                            prior(normal(-0.13, 4.0), class = b, coef = high_N:high_P),
-                            prior(normal(0, 10), class = b, coef = co:high_N:high_P),
-                            prior(normal(0, 100), class = Intercept)))
-
-# save model
-save(m.acp.r, file = "./output/average-concentration-rpv-cl-priors.rda")
+# RPV model
+m.cu.r <- update(m.cu.p, newdata = d.at.r)
 
 # inspect model
-summary(m.acp.r) # similar to model without specific priors
-plot(m.acp.r)
+summary(m.cu.r) # positive effect of P
+yrep.cu.r <- posterior_predict(m.cu.r, draws = 100)
+ppc_dens_overlay(log10(d.at.r$quant_rd), log10(yrep.cu.r)) # not a very good fit
+
+
+#### log-transformed models, specific priors ####
+
+# use the estimates for coinfection and N addition from CL's models
+
+# PAV model
+summary(m.c.p) # mean = 0.23, se = 0.41
+summary(m.n.p) # mean = -0.21, se = 0.21
+m.li.p <- update(m.lu.p,
+                 prior = c(prior(normal(0.23, 0.41), class = b, coef = co),
+                            prior(normal(-0.21, 0.21), class = b, coef = high_N),
+                            prior(normal(0, 1), class = b, coef = high_P),
+                            prior(normal(0, 1), class = b, coef = co:high_N),
+                            prior(normal(0, 1), class = b, coef = co:high_P),
+                            prior(normal(0, 1), class = b, coef = high_N:high_P),
+                            prior(normal(0, 1), class = b, coef = co:high_N:high_P),
+                            prior(normal(0, 10), class = Intercept)))
+
+# save model
+save(m.li.p, file = "./output/exp-1-analysis-log-informative-pav.rda")
+
+# inspect model
+summary(m.li.p) # didn't change estimates too much
+plot(m.li.p) # convergence among chains
+plot(marginal_effects(m.li.p), points = T)
+pp_check(m.li.p, nsamples = 100) # model distributions slightly higher, but closer than model with uninformative priors
+
+# RPV model
+summary(m.c.r)
+summary(m.n.r)
+m.li.r <- update(m.lu.r, 
+                  prior = c(prior(normal(-0.15, 0.3), class = b, coef = co),
+                            prior(normal(-0.09, 0.26), class = b, coef = high_N),
+                            prior(normal(0.36, 0.32), class = b, coef = high_P),
+                            prior(normal(-0.24, 0.39), class = b, coef = co:high_N),
+                            prior(normal(0, 1), class = b, coef = co:high_P),
+                            prior(normal(-0.13, 0.39), class = b, coef = high_N:high_P),
+                            prior(normal(0, 1), class = b, coef = co:high_N:high_P),
+                            prior(normal(0, 10), class = Intercept)))
+
+# save model
+save(m.li.r, file = "./output/exp-1-analysis-log-informative-rpv.rda")
+
+# inspect model
+summary(m.li.r) # similar estimates to uninformative priors, tighter confidence intervals
+plot(m.li.r) # convergence among chains
+plot(marginal_effects(m.li.r), points = T)
+pp_check(m.li.r, nsamples = 100) # similar to uninformative priors
 
 
 #### save data for plotting ####
@@ -376,93 +396,3 @@ d.out = full_join(d.at.p, d.at.r)
 
 # save file
 write_csv(d.out, "./output/exp-1-analysis-data.csv")
-
-
-#### models not used ####
-
-# PAV titer model
-m.at.p <- brm(data = d.at.p, family = gaussian,
-              log_quant ~ co * high_N * high_P,
-              autocor = cor_ar(~time),
-              prior <- c(prior(normal(0, 100), class = Intercept),
-                         prior(normal(0, 10), class = b)),
-              iter = 6000, warmup = 1000, chains = 3, cores = 2)
-
-save(m.at.p, file = "./output/average-titer-pav.rda")
-
-# inspect model
-summary(m.at.p) # coinfection increases titer
-marginal_effects(m.at.p)
-plot(m.at.p)
-
-# PAV concentration model withouth 3-way interaction
-m.ac.p.1 <- update(m.ac.p, formula. = ~ . - co:high_N:high_P)
-
-# save model
-save(m.ac.p.1, file = "./output/average-concentration-pav-simplified-1.rda")
-
-# inspect model
-summary(m.ac.p.1) # coinfection increases concentration, but the effect goes away with high N
-
-# concentration model without 1 2-way interaction
-m.ac.p.2 <- update(m.ac.p.1, formula. = ~ . - co:high_N)
-m.ac.p.3 <- update(m.ac.p.1, formula. = ~ . - co:high_P)
-m.ac.p.4 <- update(m.ac.p.1, formula. = ~ . - high_N:high_P)
-
-# concentration model with only 1 2-way interaction
-m.ac.p.5 <- update(m.ac.p.2, formula. = ~ . - co:high_P) # N:P
-m.ac.p.6 <- update(m.ac.p.3, formula. = ~ . - high_N:high_P) # co:N
-m.ac.p.7 <- update(m.ac.p.4, formula. = ~ . - co:high_N) # co:P
-
-# concentration model with only main effects
-m.ac.p.8 <- update(m.ac.p.5, formula. = ~ . - high_N:high_P)
-
-# save models
-save(m.ac.p.2, file = "./output/average-concentration-pav-simplified-2.rda")
-save(m.ac.p.3, file = "./output/average-concentration-pav-simplified-3.rda")
-save(m.ac.p.4, file = "./output/average-concentration-pav-simplified-4.rda")
-save(m.ac.p.5, file = "./output/average-concentration-pav-simplified-5.rda")
-save(m.ac.p.6, file = "./output/average-concentration-pav-simplified-6.rda")
-save(m.ac.p.7, file = "./output/average-concentration-pav-simplified-7.rda")
-save(m.ac.p.8, file = "./output/average-concentration-pav-simplified-8.rda")
-
-# loo fits
-l.ac.p = loo(m.ac.p, save_psis = T)
-l.ac.p.1 = loo(m.ac.p.1, save_psis = T)
-l.ac.p.2 = loo(m.ac.p.2, save_psis = T)
-l.ac.p.3 = loo(m.ac.p.3, save_psis = T)
-l.ac.p.4 = loo(m.ac.p.4, save_psis = T)
-l.ac.p.5 = loo(m.ac.p.5, save_psis = T)
-l.ac.p.6 = loo(m.ac.p.6, save_psis = T)
-l.ac.p.7 = loo(m.ac.p.7, save_psis = T)
-l.ac.p.8 = loo(m.ac.p.8, save_psis = T)
-
-# compare models
-compare(l.ac.p, l.ac.p.1, l.ac.p.2, l.ac.p.3, l.ac.p.4, l.ac.p.5, l.ac.p.6, l.ac.p.7, l.ac.p.8) 
-# elpd_diff + se_diff demonstrates whether the elpd_diff overlaps with 0
-# many of them do, except 1, the full model, 5, and 2
-# interpretation: don't need 3-way interaction, better with co:N, having co:P, N:P, or neither are all about the same (co:P slightly preferred)
-
-# inspect best fitting models
-summary(m.ac.p.4)
-l.ac.p.4 # no high k values
-summary(m.ac.p.6)
-l.ac.p.6 # no high k values
-summary(m.ac.p.1)
-l.ac.p.1 # no high k values
-
-# RPV titer model
-m.at.r <- brm(data = d.at.r, family = gaussian,
-              log_quant ~ co * high_N * high_P,
-              autocor = cor_ar(~time),
-              prior <- c(prior(normal(0, 100), class = Intercept),
-                         prior(normal(0, 10), class = b)),
-              iter = 6000, warmup = 1000, chains = 3, cores = 2)
-
-# save model
-save(m.at.r, file = "./output/average-titer-rpv.rda")
-
-# inspect model
-summary(m.at.r) # no significant effect
-marginal_effects(m.at.r)
-plot(m.at.r)
