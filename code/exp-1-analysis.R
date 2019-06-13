@@ -75,7 +75,7 @@ dat %>%
 dat %>%
   filter(quant_zero == 0) %>%
   ggplot() +
-  geom_histogram(aes(x = log10(quant_adj)))
+  geom_histogram(aes(x = log(quant_adj)))
 
 
 #### visualize sources of variation ####
@@ -218,7 +218,7 @@ dat2 %>%
 # look at mean values by nutrient - log-transformed PAV
 dat2 %>%
   filter(quant_zero == 0 & target == "PAV" & !(inoc %in% c("healthy", "RPV"))) %>%
-  ggplot(aes(x = dpi, y = log10(quant_adj))) + 
+  ggplot(aes(x = dpi, y = log(quant_adj))) + 
   stat_summary(fun.data = "mean_se") +
   stat_summary(fun.data = "mean_se", geom = "line") +
   facet_grid(inoc ~ nutrient, scales = "free")
@@ -234,7 +234,7 @@ dat2 %>%
 # look at mean values by nutrient - log-transformed RPV
 dat2 %>%
   filter(quant_zero == 0 & target == "RPV" & !(inoc %in% c("healthy", "PAV"))) %>%
-  ggplot(aes(x = dpi, y = log10(quant_adj))) + 
+  ggplot(aes(x = dpi, y = log(quant_adj))) + 
   stat_summary(fun.data = "mean_se") +
   stat_summary(fun.data = "mean_se", geom = "line") +
   facet_grid(inoc ~ nutrient, scales = "free")
@@ -247,10 +247,10 @@ d.at <- dat2 %>%
   filter(quant_zero == 0 &
            inoc %in% c("PAV", "coinfection", "RPV")) %>%
   mutate(co = ifelse(inoc == "coinfection", 1, 0),
-         log_quant = log10(quant_adj),
+         log_quant = log(quant_adj),
          exp_round = round,
          conc = quant_adj/mass_ext.mg,
-         log_conc = log10(conc),
+         log_conc = log(conc),
          quant_rd = round(quant_adj))
 
 # concentration values
@@ -313,10 +313,10 @@ save(m.lu.r, file = "./output/exp-1-analysis-log-uninformative-rpv.rda")
 #### count models, uninformative priors ####
 
 # check mean and variance
-mean(d.at.p$conc_rd) #460
-var(d.at.p$conc_rd) # much larger variance
-mean(d.at.r$conc_rd) # 10683
-var(d.at.r$conc_rd) # much larger variance
+mean(d.at.p$quant_rd)
+var(d.at.p$quant_rd) # much larger variance
+mean(d.at.r$quant_rd)
+var(d.at.r$quant_rd) # much larger variance
 
 # PAV model (you can't currently implement autoregressive models, time included as a random effect)
 m.cu.p <- brm(data = d.at.p, family = negbinomial(),
@@ -329,7 +329,7 @@ m.cu.p <- brm(data = d.at.p, family = negbinomial(),
 # inspect model
 summary(m.cu.p)
 yrep.cu.p <- posterior_predict(m.cu.p, draws = 100)
-ppc_dens_overlay(log10(d.at.p$quant_rd), log10(yrep.cu.p)) # not a very good fit
+ppc_dens_overlay(log(d.at.p$quant_rd), log(yrep.cu.p)) # not a very good fit
 
 # RPV model
 m.cu.r <- update(m.cu.p, newdata = d.at.r)
@@ -337,7 +337,7 @@ m.cu.r <- update(m.cu.p, newdata = d.at.r)
 # inspect model
 summary(m.cu.r) # positive effect of P
 yrep.cu.r <- posterior_predict(m.cu.r, draws = 100)
-ppc_dens_overlay(log10(d.at.r$quant_rd), log10(yrep.cu.r)) # not a very good fit
+ppc_dens_overlay(log(d.at.r$quant_rd), log(yrep.cu.r)) # not a very good fit
 
 
 #### log-transformed models, specific priors ####
@@ -345,17 +345,20 @@ ppc_dens_overlay(log10(d.at.r$quant_rd), log10(yrep.cu.r)) # not a very good fit
 # use the estimates for coinfection and N addition from CL's models
 
 # PAV model
-summary(m.c.p) # mean = 0.23, se = 0.41
-summary(m.n.p) # mean = -0.21, se = 0.21
-m.li.p <- update(m.lu.p,
-                 prior = c(prior(normal(0.23, 0.41), class = b, coef = co),
-                            prior(normal(-0.21, 0.21), class = b, coef = high_N),
-                            prior(normal(0, 1), class = b, coef = high_P),
-                            prior(normal(0, 1), class = b, coef = co:high_N),
-                            prior(normal(0, 1), class = b, coef = co:high_P),
-                            prior(normal(0, 1), class = b, coef = high_N:high_P),
-                            prior(normal(0, 1), class = b, coef = co:high_N:high_P),
-                            prior(normal(0, 10), class = Intercept)))
+summary(m.c.p) # mean = 0.53, se = 1.29
+summary(m.n.p) # mean = -0.48, se = 0.52
+m.li.p <- brm(data = d.at.p, family = gaussian,
+              log_conc ~ co * high_N * high_P,
+              autocor = cor_ar(~time),
+              prior = c(prior(normal(0.53, 1.29), class = b, coef = co),
+                        prior(normal(-0.48, 0.52), class = b, coef = high_N),
+                        prior(normal(0, 1), class = b, coef = high_P),
+                        prior(normal(0, 1), class = b, coef = co:high_N),
+                        prior(normal(0, 1), class = b, coef = co:high_P),
+                        prior(normal(0, 1), class = b, coef = high_N:high_P),
+                        prior(normal(0, 1), class = b, coef = co:high_N:high_P),
+                        prior(normal(0, 10), class = Intercept)),
+              iter = 6000, warmup = 1000, chains = 3, cores = 2)
 
 # save model
 save(m.li.p, file = "./output/exp-1-analysis-log-informative-pav.rda")
@@ -364,18 +367,19 @@ save(m.li.p, file = "./output/exp-1-analysis-log-informative-pav.rda")
 summary(m.li.p) # didn't change estimates too much
 plot(m.li.p) # convergence among chains
 plot(marginal_effects(m.li.p), points = T)
-pp_check(m.li.p, nsamples = 100) # model distributions slightly higher, but closer than model with uninformative priors
+pp_check(m.li.p, nsamples = 100) # model distributions slightly higher, similar to model with uninformative priors
 
 # RPV model
 summary(m.c.r)
 summary(m.n.r)
-m.li.r <- update(m.lu.r, 
-                  prior = c(prior(normal(-0.15, 0.3), class = b, coef = co),
-                            prior(normal(-0.09, 0.26), class = b, coef = high_N),
-                            prior(normal(0.36, 0.32), class = b, coef = high_P),
-                            prior(normal(-0.24, 0.39), class = b, coef = co:high_N),
+m.li.r <- update(m.li.p,
+                 newdata = d.at.r,
+                  prior = c(prior(normal(-0.33, 0.70), class = b, coef = co),
+                            prior(normal(-0.19, 0.61), class = b, coef = high_N),
+                            prior(normal(0.84, 0.74), class = b, coef = high_P),
+                            prior(normal(-0.57, 0.89), class = b, coef = co:high_N),
                             prior(normal(0, 1), class = b, coef = co:high_P),
-                            prior(normal(-0.13, 0.39), class = b, coef = high_N:high_P),
+                            prior(normal(-0.30, 0.88), class = b, coef = high_N:high_P),
                             prior(normal(0, 1), class = b, coef = co:high_N:high_P),
                             prior(normal(0, 10), class = Intercept)))
 

@@ -102,7 +102,7 @@ sum(is.na(rd2$Extraction.WetWeighTaken.mg.S1))
 p.d <- pd2 %>%
   filter(quant_adj > 0) %>%
   mutate(conc = quant_adj / Extraction.WetWeighTaken.mg.S1,
-         log_conc = log10(conc),
+         log_conc = log(conc),
          co = ifelse(inoc == "PAVRPV", 1, 0),
          high_N = ifelse(nutrient == "N" | nutrient == "NP", 1, 0),
          high_P = ifelse(nutrient == "P" | nutrient == "NP", 1, 0))
@@ -110,7 +110,7 @@ p.d <- pd2 %>%
 r.d <- rd2 %>%
   filter(quant_adj > 0) %>%
   mutate(conc = quant_adj / Extraction.WetWeighTaken.mg.S1,
-         log_conc = log10(conc),
+         log_conc = log(conc),
          co = ifelse(inoc == "PAVRPV", 1, 0),
          high_N = ifelse(nutrient == "N" | nutrient == "NP", 1, 0),
          high_P = ifelse(nutrient == "P" | nutrient == "NP", 1, 0))

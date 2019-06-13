@@ -1,5 +1,7 @@
 ## Goal: figure of Experiment 1 virus concentration and model estimates from exp-1-analysis.R
 
+# editing figure
+
 
 #### set up ####
 
@@ -35,16 +37,15 @@ postp <- posterior_samples(m.li.p)
 # rename columns
 colnames(postr) <- colnames(postp) <- c("int", "co", "N", "P", "co_N", "co_P", "NP", "co_NP", "ar", "sigma", "lp")
 
-# posterior slopes
+# percentage increase
 sloper <- postr %>%
-  transmute(low = int - mean(int),
-            high_N = N,
-            high_P = P,
-            high_NP = N + P + NP,
-            low_co =  co,
-            N_co = co + co_N,
-            P_co = co + co_P,
-            NP_co = co + co_N + co_P + co_NP) %>%
+  transmute(high_N = (exp(N) - 1),
+            high_P = (exp(P) - 1),
+            high_NP = (exp(N + P + NP) - 1),
+            low_co =  (exp(co) - 1),
+            N_co = (exp(co + co_N) - 1),
+            P_co = (exp(co + co_P) - 1),
+            NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
   gather(key = "treatment", value = "effect") %>%
   mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
          Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
@@ -52,14 +53,13 @@ sloper <- postr %>%
          Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
 
 slopep <- postp %>%
-  transmute(low = int - mean(int),
-            high_N = N,
-            high_P = P,
-            high_NP = N + P + NP,
-            low_co =  co,
-            N_co = co + co_N,
-            P_co = co + co_P,
-            NP_co = co + co_N + co_P + co_NP) %>%
+  transmute(high_N = (exp(N) - 1),
+            high_P = (exp(P) - 1),
+            high_NP = (exp(N + P + NP) - 1),
+            low_co =  (exp(co) - 1),
+            N_co = (exp(co + co_N) - 1),
+            P_co = (exp(co + co_P) - 1),
+            NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
   gather(key = "treatment", value = "effect") %>%
   mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
          Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
@@ -104,7 +104,7 @@ plotA <- ggplot(filter(dat, target == "PAV"), aes(x = dpi, y = log_conc, colour 
   scale_shape_manual(values = c(19, 21), guide = F) +
   scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
   xlab("Days post inoculation") +
-  ylab(expression(paste(Log[10], "(PAV concentration)", sep = "")))
+  ylab("ln(PAV concentration)")
 
 # RPV
 plotB <- ggplot(filter(dat, target == "RPV"), aes(x = dpi, y = log_conc, colour = nutrient)) +
@@ -130,20 +130,17 @@ plotB <- ggplot(filter(dat, target == "RPV"), aes(x = dpi, y = log_conc, colour 
   scale_shape_manual(values = c(19, 21), name = "Inoculation") +
   scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
   xlab("Days post inoculation") +
-  ylab(expression(paste(Log[10], "(RPV concentration)", sep = "")))
+  ylab("ln(RPV concentration)")
 
 
 #### figure of model estimates ####
 
-# annotation text
-ann_textp <- data.frame(effect = c(0.52, 0.65), Nutrient = c("N+P", "N+P"), lab = c("single infection", "coinfection"), Inoculation = c("single", "coinfection"))
-ann_textr <- data.frame(effect = c(0.66, 0.82), Nutrient = c("N+P", "N+P"), lab = c("single infection", "coinfection"), Inoculation = c("single", "coinfection"))
-
-# PAV
-plotC <- ggplot(slopep, aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient, linetype = Inoculation)) +
-  geom_density_ridges(alpha = 0.7) +
-  geom_vline(xintercept = 0, linetype = "dotted", size = 0.3) +
-  facet_wrap(~Inoculation)  +
+# PAV single
+plotC <- ggplot(filter(slopep, Inoculation == "single"), 
+       aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient)) +
+  stat_density_ridges(data = filter(slopep, Inoculation == "coinfection"), alpha = 0, color = "white") +
+  geom_vline(xintercept = 0, color= "gray", size = 0.3) +
+  stat_density_ridges(alpha = 0.7, rel_min_height = 0.005, quantile_lines = T, quantiles = c(0.025, 0.5, 0.975), linetype = "solid") +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
@@ -157,39 +154,119 @@ plotC <- ggplot(slopep, aes(x = effect, y = Nutrient, group = Nutrient, fill = N
         strip.background = element_blank(),
         panel.spacing.x = unit(0, "lines")) +
   scale_fill_manual(values = col_pal, guide = F) +
-  scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
-  scale_y_discrete(expand = expand_scale(add = c(0.2, 1.8))) +
-  xlab("Nutrient effect on PAV concentration") +
-  ylab("Density of posterior dist.") +
-  geom_text(data = ann_textp, label = c("single infection", "coinfection"), nudge_y = 1.6, size = an_txt)
-
-# RPV
-plotD <- ggplot(sloper, aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient, linetype = Inoculation)) +
-  geom_density_ridges(alpha = 0.7) +
-  geom_vline(xintercept = 0, linetype = "dotted", size = 0.3) +
-  facet_wrap(~Inoculation)  +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
-        axis.text = element_text(color = "black", size = sm_txt),
-        strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.position = c(0.25, 0.92),
-        legend.direction = "horizontal",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_blank(),
-        panel.spacing.x = unit(0, "lines")) +
-  scale_fill_manual(values = col_pal, guide = F) +
-  scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
   scale_y_discrete(expand = expand_scale(add = c(0.2, 1.9))) +
-  xlab("Nutrient effect on RPV concentration") +
-  ylab("Density of posterior dist.") +
-  geom_text(data = ann_textr, label = c("single infection", "coinfection"), nudge_y = 1.7, size = an_txt)
+  xlab("") +
+  ylab("Density of posterior dist.")  +
+  xlim(-0.7, 1.5)
 
+# PAV coinfection
+plotD <- ggplot(filter(slopep, Inoculation == "coinfection"), 
+       aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient)) +
+  geom_vline(xintercept = 0, color= "gray", size = 0.3) +
+  stat_density_ridges(alpha = 0.7, rel_min_height = 0.005, quantile_lines = T, quantiles = c(0.025, 0.5, 0.975), linetype = "dashed") +
+  theme_bw() +
+  theme(axis.title.x = element_text(color = "black", size = lg_txt),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(color = "black", size = sm_txt),
+        axis.text.y = element_blank(),
+        strip.text = element_blank(),
+        legend.title = element_text(color = "black", size = sm_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.position = c(0.25, 0.92),
+        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_blank(),
+        panel.spacing.x = unit(0, "lines")) +
+  scale_fill_manual(values = col_pal, guide = F) +
+  scale_y_discrete(expand = expand_scale(add = c(0.2, 1.9))) +
+  xlab("") +
+  ylab("Density of posterior dist.") +
+  xlim(-0.9, 3.3)
+
+# RPV single
+plotE <- ggplot(filter(sloper, Inoculation == "single"), 
+       aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient)) +
+  stat_density_ridges(data = filter(sloper, Inoculation == "coinfection"), alpha = 0, color = "white") +
+  geom_vline(xintercept = 0, color= "gray", size = 0.3) +
+  stat_density_ridges(alpha = 0.7, rel_min_height = 0.005, quantile_lines = T, quantiles = c(0.025, 0.5, 0.975), linetype = "solid") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = lg_txt),
+        axis.text = element_text(color = "black", size = sm_txt),
+        strip.text = element_blank(),
+        legend.title = element_text(color = "black", size = sm_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.position = c(0.25, 0.92),
+        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_blank(),
+        panel.spacing.x = unit(0, "lines")) +
+  scale_fill_manual(values = col_pal, guide = F) +
+  scale_y_discrete(expand = expand_scale(add = c(0.2, 1.2))) +
+  xlab("") +
+  ylab("Density of posterior dist.") +
+  xlim(-0.7, 3.5)
+
+# RPV coinfection
+plotF <- ggplot(filter(sloper, Inoculation == "coinfection"), 
+       aes(x = effect, y = Nutrient, group = Nutrient, fill = Nutrient)) +
+  geom_vline(xintercept = 0, color= "gray", size = 0.3) +
+  stat_density_ridges(alpha = 0.7, rel_min_height = 0.005, quantile_lines = T, quantiles = c(0.025, 0.5, 0.975), linetype = "dashed") +
+  theme_bw() +
+  theme(axis.title.x = element_text(color = "black", size = lg_txt),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(color = "black", size = sm_txt),
+        axis.text.y = element_blank(),
+        strip.text = element_blank(),
+        legend.title = element_text(color = "black", size = sm_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.position = c(0.25, 0.92),
+        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_blank(),
+        panel.spacing.x = unit(0, "lines")) +
+  scale_fill_manual(values = col_pal, guide = F) +
+  scale_y_discrete(expand = expand_scale(add = c(0.2, 1.2))) +
+  xlab("") +
+  ylab("Density of posterior dist.") +
+  xlim(-1, 4)
 
 #### combine plots ####
 
+# combine
+plot <- plot_grid(plotA, plotC, plotD, plotB, plotE, plotF, 
+                  labels = c("A", "B", "C", "D", "E", "F"), 
+                  label_size = lg_txt, 
+                  rel_widths = c(1, 0.55, 0.45, 1, 0.55, 0.45),
+                  label_x = c(0, 0.15, -0.05, 0, 0.15, -0.05))
+
+# save with new x-axis labels
 pdf("./output/exp-1-concentration-figure.pdf", width = 6, height = 4)
-plot_grid(plotA, plotC, plotB, plotD, labels = c("A", "C", "B", "D"), label_size = lg_txt)
+ggdraw(plot) +
+  draw_label(label = "Proportion change in RPV concentration", x = 0.77, y = 0.04, size = lg_txt) +
+  draw_label(label = "Proportion change in PAV concentration", x = 0.77, y = 0.54, size = lg_txt)
 dev.off()
+
+
+#### numbers for text ####
+
+# model summaries
+summary(m.li.r)
+summary(m.li.p)
+
+# mean values in proportion change
+sloper %>%
+  group_by(Inoculation, Nutrient) %>%
+  summarise(mean_prop = mean(effect),
+            se_prop = sd(effect) / sqrt(length(effect)),
+            l_prop = quantile(effect, probs = 0.025),
+            u_prop = quantile(effect, probs = 0.975))
+  
+slopep %>%
+  group_by(Inoculation, Nutrient) %>%
+  summarise(mean_prop = mean(effect),
+            se_prop = sd(effect) / sqrt(length(effect)),
+            l_prop = quantile(effect, probs = 0.025),
+            u_prop = quantile(effect, probs = 0.975))
