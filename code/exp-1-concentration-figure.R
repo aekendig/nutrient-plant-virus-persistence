@@ -1,7 +1,4 @@
-## Goal: figure of Experiment 1 virus concentration and model estimates from exp-1-analysis.R
-
-# editing figure
-
+## Goal: figure of Experiment 1 virus concentration and model estimates from exp-1-qPCR-analysis.R
 
 #### set up ####
 
@@ -9,17 +6,16 @@
 rm(list=ls())
 
 # load packages
-library(brms)
 library(tidyverse)
 library(ggridges)
 library(cowplot)
 
 # import data
-dat <- read_csv("./output/exp-1-analysis-data.csv")
+dat <- read_csv("./output/exp-1-qPCR-analysis-data.csv")
 
 # load models
-load("./output/exp-1-analysis-log-informative-rpv.rda")
-load("./output/exp-1-analysis-log-informative-pav.rda")
+load("./output/exp-1-qPCR-analysis-log-informative-rpv.rda")
+load("./output/exp-1-qPCR-analysis-log-informative-pav.rda")
 
 
 #### edit data ####
