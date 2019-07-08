@@ -306,6 +306,7 @@ load("./output/exp-1-transmission-rpv-down-quantity.rda")
 plot(mpuc)
 plot(mpuq)
 plot(mpdc)
+plot(mpdq)
 
 plot(mruc)
 plot(mruq)
@@ -412,7 +413,7 @@ apuci <- as.array(mpuci) %>%
   mcmc_intervals_data(pars = params) %>%
   mutate(model = "PAV up conc informative")
 
-plot_intervals(full_join(apuc, apuci))
+plot_intervals(full_join(apuc, apuci)) # slightly smaller errorbars, similar mean values
 
 # RPV model
 summary(mr)
@@ -435,6 +436,7 @@ mruci <- update(mruc,
                           prior(normal(0, 10), class = b, coef = co:high_N_t:high_P_t),
                           prior(cauchy(0, 1), class = sd)))
 
+summary(mruci)
 plot(mruci)
 
 save(mruci, file = "./output/exp-1-transmission-rpv-up-concentration-informative-priors.rda")
@@ -443,7 +445,7 @@ aruci <- as.array(mruci) %>%
   mcmc_intervals_data(pars = params) %>%
   mutate(model = "RPV up conc informative")
 
-plot_intervals(full_join(aruc, aruci))
+plot_intervals(full_join(aruc, aruci)) # smaller error bars, similar mean values
 
 
 #### save data for plotting ####
