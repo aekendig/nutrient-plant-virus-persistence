@@ -9,9 +9,12 @@ rm(list=ls())
 library(tidyverse)
 library(ggridges)
 library(cowplot)
+library(brms)
+library(tidybayes)
 
 # import data
-dat <- read_csv("./output/exp-1-qPCR-analysis-data.csv")
+pdat <- read_csv("./output/exp-1-qPCR-analysis-pav-data.csv")
+rdat <- read_csv("./output/exp-1-qPCR-analysis-rpv-data.csv")
 
 # load models
 load("./output/exp-1-qPCR-analysis-log-informative-rpv.rda")
@@ -21,7 +24,12 @@ load("./output/exp-1-qPCR-analysis-log-informative-pav.rda")
 #### edit data ####
 
 # inoculation column
-dat <- dat %>%
+pdat <- pdat %>%
+  mutate(inoculation = ifelse(co == 0, "single", "co"),
+         inoculation = fct_relevel(inoculation, "single"),
+         nutrient = fct_relevel(nutrient, "low", "N", "P"))
+
+rdat <- rdat %>%
   mutate(inoculation = ifelse(co == 0, "single", "co"),
          inoculation = fct_relevel(inoculation, "single"),
          nutrient = fct_relevel(nutrient, "low", "N", "P"))
@@ -33,37 +41,58 @@ postp <- posterior_samples(m.li.p)
 # rename columns
 colnames(postr) <- colnames(postp) <- c("int", "co", "N", "P", "co_N", "co_P", "NP", "co_NP", "ar", "sigma", "lp")
 
+# category average
+
+avgp <- postp %>%
+  transmute(low = int,
+            high_N = int + N,
+            high_P = int + P,
+            high_NP = int + N + P + NP,
+            low_co =  int + co,
+            N_co = int + N + co + co_N,
+            P_co = int + P + co + co_P,
+            NP_co = int + N + P + co + co_N + co_P + NP + co_NP) %>%
+   gather(key = "treatment", value = "effect") %>%
+   mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
+          Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
+          Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
+          Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
 # percentage increase
-sloper <- postr %>%
-  transmute(high_N = (exp(N) - 1),
-            high_P = (exp(P) - 1),
-            high_NP = (exp(N + P + NP) - 1),
-            low_co =  (exp(co) - 1),
-            N_co = (exp(co + co_N) - 1),
-            P_co = (exp(co + co_P) - 1),
-            NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
-         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
-         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
 
-slopep <- postp %>%
-  transmute(high_N = (exp(N) - 1),
-            high_P = (exp(P) - 1),
-            high_NP = (exp(N + P + NP) - 1),
-            low_co =  (exp(co) - 1),
-            N_co = (exp(co + co_N) - 1),
-            P_co = (exp(co + co_P) - 1),
-            NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
-         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
-         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
+# slopep <- postp %>%
+#   transmute(high_N = (exp(N) - 1),
+#             high_P = (exp(P) - 1),
+#             high_NP = (exp(N + P + NP) - 1),
+#             low_co =  (exp(co) - 1),
+#             N_co = (exp(co + co_N) - 1),
+#             P_co = (exp(co + co_P) - 1),
+#             NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
+#   gather(key = "treatment", value = "effect") %>%
+#   mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
+#          Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
+#          Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
+#          Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
 
+# sloper <- postr %>%
+#   transmute(high_N = (exp(N) - 1),
+#             high_P = (exp(P) - 1),
+#             high_NP = (exp(N + P + NP) - 1),
+#             low_co =  (exp(co) - 1),
+#             N_co = (exp(co + co_N) - 1),
+#             P_co = (exp(co + co_P) - 1),
+#             NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
+#   gather(key = "treatment", value = "effect") %>%
+#   mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
+#          Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
+#          Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
+#          Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
+
+
+ 
 # check treatments
-sloper %>% select(treatment, Inoculation, Nutrient) %>% unique()
+# sloper %>% select(treatment, Inoculation, Nutrient) %>% unique()
 
 
 #### figure of raw data ####
@@ -76,8 +105,8 @@ sm_txt = 6
 lg_txt = 8
 an_txt = 2
 
-# PAV
-plotA <- ggplot(filter(dat, target == "PAV"), aes(x = dpi, y = log_conc, colour = nutrient)) +
+# PAV (concentration over time)
+plotA <- ggplot(pdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
   stat_summary(fun.data = "mean_se", geom = "errorbar", width = 0.1, position = position_dodge(0.6), aes(size = inoculation)) +
   stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation)) +
   stat_summary(fun.y = "mean", geom = "line", position = position_dodge(0.6), aes(linetype = inoculation)) +
@@ -102,8 +131,8 @@ plotA <- ggplot(filter(dat, target == "PAV"), aes(x = dpi, y = log_conc, colour 
   xlab("Days post inoculation") +
   ylab("ln(PAV concentration)")
 
-# RPV
-plotB <- ggplot(filter(dat, target == "RPV"), aes(x = dpi, y = log_conc, colour = nutrient)) +
+# RPV (concentration over time)
+plotB <- ggplot(rdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
   stat_summary(fun.data = "mean_se", geom = "errorbar", width = 0.1, position = position_dodge(0.6), aes(size = inoculation), show.legend = F) +
   stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation)) +
   stat_summary(fun.y = "mean", geom = "line", position = position_dodge(0.6), aes(linetype = inoculation)) +
@@ -127,6 +156,22 @@ plotB <- ggplot(filter(dat, target == "RPV"), aes(x = dpi, y = log_conc, colour 
   scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
   xlab("Days post inoculation") +
   ylab("ln(RPV concentration)")
+
+
+#### figure of category averages ####
+
+ggplot(avgp, aes(x = effect, y = Inoculation)) +
+  geom_halfeyeh(aes(fill = Nutrient),
+                point_interval = median_qi, .width = 0.95) +
+  facet_wrap(~Nutrient, nrow = 1)
+
+#### start here
+
+avgp %>%
+  group_by(treatment, Nutrient, Inoculation) %>%
+  median_hdi() %>%
+  ggplot(aes(x = Nutrient, y = effect)) +
+  geom_pointinterval(aes(color = Nutrient, shape = Inoculation), position = position_dodge(0.2))
 
 
 #### figure of model estimates ####
