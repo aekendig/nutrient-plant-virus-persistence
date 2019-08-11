@@ -357,15 +357,10 @@ summary(m.li.p)
 
 # mean values in proportion change
 sloper %>%
-  group_by(Inoculation, Nutrient) %>%
-  summarise(mean_prop = mean(effect),
-            se_prop = sd(effect) / sqrt(length(effect)),
-            l_prop = quantile(effect, probs = 0.025),
-            u_prop = quantile(effect, probs = 0.975))
-  
+  group_by(treatment, Inoculation, Nutrient) %>%
+  mean_hdi()
+
 slopep %>%
-  group_by(Inoculation, Nutrient) %>%
-  summarise(mean_prop = mean(effect),
-            se_prop = sd(effect) / sqrt(length(effect)),
-            l_prop = quantile(effect, probs = 0.025),
-            u_prop = quantile(effect, probs = 0.975))
+  group_by(treatment, Inoculation, Nutrient) %>%
+  mean_hdi()
+
