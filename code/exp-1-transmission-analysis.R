@@ -58,7 +58,7 @@ qdatr2 <- qdatr %>%
 
 qdatpR1 <- qdatp2 %>%
   filter(round == 1) %>%
-  group_by(time, inoc, nutrient, round) %>%
+  group_by(dpi, time, inoc, nutrient, round) %>%
   mutate(total_aphid_mass.mg = sum(aphid_mass.mg),
          conc2 = conc * (aphid_mass.mg / total_aphid_mass.mg)) %>%
   summarise(aphid_mass.mg = unique(total_aphid_mass.mg),
@@ -69,7 +69,7 @@ qdatpR1 <- qdatp2 %>%
 
 qdatrR1 <- qdatr2 %>%
   filter(round == 1) %>%
-  group_by(time, inoc, nutrient, round) %>%
+  group_by(dpi, time, inoc, nutrient, round) %>%
   mutate(total_aphid_mass.mg = sum(aphid_mass.mg),
          conc2 = conc * (aphid_mass.mg / total_aphid_mass.mg)) %>%
   summarise(aphid_mass.mg = unique(total_aphid_mass.mg),
@@ -81,10 +81,12 @@ qdatrR1 <- qdatr2 %>%
 # recombine with rest of data
 qdatp3 <- qdatp2 %>%
   filter(round != 1) %>%
+  select(dpi, time, inoc, nutrient, round, replicate, aphid_mass.mg, conc, quant_t) %>%
   full_join(qdatpR1)
 
 qdatr3 <- qdatr2 %>%
   filter(round != 1) %>%
+  select(dpi, time, inoc, nutrient, round, replicate, aphid_mass.mg, conc, quant_t) %>%
   full_join(qdatrR1)
 
 
