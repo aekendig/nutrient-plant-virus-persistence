@@ -1,4 +1,4 @@
-## Goal: estimate priors for exp-1-qPCR-analysis based on C. Lacroix's data
+## Goal: estimate priors for exp-1-concentration-analysis based on C. Lacroix's data
 
 
 #### set up ####
@@ -106,7 +106,7 @@ p.d <- pd2 %>%
          co = ifelse(inoc == "PAVRPV", 1, 0),
          high_N = ifelse(nutrient == "N" | nutrient == "NP", 1, 0),
          high_P = ifelse(nutrient == "P" | nutrient == "NP", 1, 0))
-write_csv(p.d, "./output/lacroix-qPCR-pav-data.csv")
+write_csv(p.d, "./output/lacroix-concentration-pav-data.csv")
 
 r.d <- rd2 %>%
   filter(quant_adj > 0) %>%
@@ -115,7 +115,7 @@ r.d <- rd2 %>%
          co = ifelse(inoc == "PAVRPV", 1, 0),
          high_N = ifelse(nutrient == "N" | nutrient == "NP", 1, 0),
          high_P = ifelse(nutrient == "P" | nutrient == "NP", 1, 0))
-write_csv(r.d, "./output/lacroix-qPCR-rpv-data.csv")
+write_csv(r.d, "./output/lacroix-concentration-rpv-data.csv")
 
 
 #### visualize data ####
@@ -146,7 +146,7 @@ m.n.p <- brm(data = filter(p.d, inoc == "PAV" & high_P == 0), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.n.p)
 summary(m.n.p)
-save(m.n.p, file = "./output/lacroix-qPCR-n-pav.rda")
+save(m.n.p, file = "./output/lacroix-concentration-n-pav.rda")
 
 # PAV co model
 m.c.p <- brm(data = filter(p.d, nutrient == "N"), family = gaussian,
@@ -157,7 +157,7 @@ m.c.p <- brm(data = filter(p.d, nutrient == "N"), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.c.p)
 summary(m.c.p)
-save(m.c.p, file = "./output/lacroix-qPCR-co-pav.rda")
+save(m.c.p, file = "./output/lacroix-concentration-co-pav.rda")
 
 # RPV nutrient model
 m.n.r <- brm(data = filter(r.d, inoc == "RPV"), family = gaussian,
@@ -168,7 +168,7 @@ m.n.r <- brm(data = filter(r.d, inoc == "RPV"), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.n.r)
 summary(m.n.r)
-save(m.n.r, file = "./output/lacroix-qPCR-n-rpv.rda")
+save(m.n.r, file = "./output/lacroix-concentration-n-rpv.rda")
 
 # RPV coinfection model
 m.c.r <- brm(data = filter(r.d, high_P == 0), family = gaussian,
@@ -179,4 +179,4 @@ m.c.r <- brm(data = filter(r.d, high_P == 0), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.c.r)
 summary(m.c.r)
-save(m.c.r, file = "./output/lacroix-qPCR-co-rpv.rda")
+save(m.c.r, file = "./output/lacroix-concentration-co-rpv.rda")

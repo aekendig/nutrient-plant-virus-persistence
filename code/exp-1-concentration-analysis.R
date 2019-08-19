@@ -19,10 +19,10 @@ library(bayesplot)
 rm(list = setdiff(ls(), c("dat")))
 
 # load models for priors
-load("./output/lacroix-qPCR-n-pav.rda")
-load("./output/lacroix-qPCR-co-pav.rda")
-load("./output/lacroix-qPCR-n-rpv.rda")
-load("./output/lacroix-qPCR-co-rpv.rda")
+load("./output/lacroix-concentration-n-pav.rda")
+load("./output/lacroix-concentration-co-pav.rda")
+load("./output/lacroix-concentration-n-rpv.rda")
+load("./output/lacroix-concentration-co-rpv.rda")
 
 
 #### edit data ####
@@ -92,7 +92,8 @@ wcdat <- dat %>%
   select(q_group, well, target, cycle) %>%
   spread(target, cycle) %>%
   group_by(well) %>%
-  summarise(mPAV = mean(PAV, na.rm = T), seP = sd(PAV, na.rm = T)/sqrt(length(!is.na(PAV))), mRPV = mean(RPV, na.rm = T), seR = sd(RPV, na.rm = T)/sqrt(length(!is.na(RPV))))
+  summarise(mPAV = mean(PAV, na.rm = T), seP = sd(PAV, na.rm = T)/sqrt(length(!is.na(PAV))), mRPV = mean(RPV, na.rm = T), seR = sd(RPV, na.rm = T)/sqrt(length(!is.na(RPV)))) %>%
+  ungroup()
 
 ggplot(wcdat, aes(x = mPAV, y = mRPV)) +
   geom_point() +
@@ -173,14 +174,16 @@ dat2 <- dat %>%
                           is.na(quant) ~ 0,
                           TRUE ~ quant),
     quant_zero = case_when(quant_adj == 0 ~ 1,
-                           TRUE ~ 0)) 
+                           TRUE ~ 0)) %>%
+  ungroup()
 
 # check for same sample in multiple qPCR groups
 dups <-dat2 %>%
   group_by(target, sample) %>%
   mutate(dup = duplicated(sample)) %>%
   filter(dup == T) %>%
-  select(sample, target)
+  select(sample, target) %>%
+  ungroup()
 
 dups %>%
   left_join(dat2) %>%
@@ -271,10 +274,56 @@ d.at %>%
 
 # data by virus
 d.at.p <- d.at %>%
-  filter(target == "PAV" & inoc != "RPV")
+  filter(target == "PAV" & inoc != "RPV") 
 
 d.at.r <- d.at %>%
   filter(target == "RPV" & inoc != "PAV")
+
+
+#### coinfection correlation ####
+
+# combine data
+d.at.c <- d.at.p %>%
+  filter(inoc == "coinfection") %>%
+  select(dpi, time, nutrient, round, replicate, conc, log_conc) %>%
+  rename(pav_conc = conc, pav_log_conc = log_conc) %>%
+  inner_join(d.at.r %>%
+               filter(inoc == "coinfection") %>%
+               select(dpi, time, nutrient, round, replicate, conc, log_conc) %>%
+               rename(rpv_conc = conc, rpv_log_conc = log_conc))
+
+# full correlation
+cor.test(~ pav_conc + rpv_conc, data = d.at.c) # 0.02, not sig
+cor.test(~ pav_log_conc + rpv_log_conc, data = d.at.c) # 0.25, marg sig
+
+# by nutrient
+d.at.c %>%
+  filter(nutrient == "low") %>%
+  cor.test(~ pav_conc + rpv_conc, data = .) # 0.27, not sig
+d.at.c %>%
+  filter(nutrient == "low") %>%
+  cor.test(~ pav_log_conc + rpv_log_conc, data = .) # 0.61, sig
+
+d.at.c %>%
+  filter(nutrient == "N") %>%
+  cor.test(~ pav_conc + rpv_conc, data = .) # 0.25, not sig
+d.at.c %>%
+  filter(nutrient == "N") %>%
+  cor.test(~ pav_log_conc + rpv_log_conc, data = .) # 0.37, not sig
+
+d.at.c %>%
+  filter(nutrient == "P") %>%
+  cor.test(~ pav_conc + rpv_conc, data = .) # -0.10, not sig
+d.at.c %>%
+  filter(nutrient == "P") %>%
+  cor.test(~ pav_log_conc + rpv_log_conc, data = .) # 0.15, not sig
+
+d.at.c %>%
+  filter(nutrient == "N+P") %>%
+  cor.test(~ pav_conc + rpv_conc, data = .) # -0.07, not sig
+d.at.c %>%
+  filter(nutrient == "N+P") %>%
+  cor.test(~ pav_log_conc + rpv_log_conc, data = .) # 0.17, not sig
 
 
 #### log-transformed models, uninformative priors ####
@@ -294,7 +343,7 @@ plot(marginal_effects(m.lu.p), points = T)
 pp_check(m.lu.p, nsamples = 100) # model distributions slightly higher
 
 # save model
-save(m.lu.p, file = "./output/exp-1-qPCR-analysis-log-uninformative-pav.rda")
+save(m.lu.p, file = "./output/exp-1-concentration-analysis-log-uninformative-pav.rda")
 
 # RPV model 
 m.lu.r <- update(m.lu.p, newdata = d.at.r)
@@ -306,7 +355,7 @@ plot(marginal_effects(m.lu.r), points = T)
 pp_check(m.lu.r, nsamples = 100) # pretty close
 
 # save model
-save(m.lu.r, file = "./output/exp-1-qPCR-analysis-log-uninformative-rpv.rda")
+save(m.lu.r, file = "./output/exp-1-concentration-analysis-log-uninformative-rpv.rda")
 
 
 #### count models, uninformative priors ####
@@ -360,7 +409,7 @@ m.li.p <- brm(data = d.at.p, family = gaussian,
               iter = 6000, warmup = 1000, chains = 3, cores = 2)
 
 # save model
-save(m.li.p, file = "./output/exp-1-qPCR-analysis-log-informative-pav.rda")
+save(m.li.p, file = "./output/exp-1-concentration-analysis-log-informative-pav.rda")
 
 # inspect model
 summary(m.li.p) # didn't change estimates too much
@@ -383,7 +432,7 @@ m.li.r <- update(m.li.p,
                             prior(normal(0, 10), class = Intercept)))
 
 # save model
-save(m.li.r, file = "./output/exp-1-qPCR-analysis-log-informative-rpv.rda")
+save(m.li.r, file = "./output/exp-1-concentration-analysis-log-informative-rpv.rda")
 
 # inspect model
 summary(m.li.r) # similar estimates to uninformative priors, tighter confidence intervals
@@ -392,8 +441,64 @@ plot(marginal_effects(m.li.r), points = T)
 pp_check(m.li.r, nsamples = 100) # similar to uninformative priors
 
 
+#### log-transformed models, uninformative priors, late dpi ####
+
+# subset data
+d.at.p.sub <- d.at.p %>% filter(dpi > 10)
+d.at.r.sub <- d.at.r %>% filter(dpi > 10)
+
+# PAV model
+m.lud.p <- update(m.lu.p, newdata = d.at.p.sub)
+
+# save model
+save(m.lud.p, file = "./output/exp-1-concentration-analysis-log-uninformative-late-pav.rda")
+
+# inspect model
+summary(m.lud.p) # similar estimates to full dataset
+plot(m.lud.p)
+pp_check(m.lud.p, nsamples = 100) # estimates a little high
+
+# RPV model
+m.lud.r <- update(m.lu.r, newdata = d.at.r.sub)
+
+# save model
+save(m.lud.r, file = "./output/exp-1-concentration-analysis-log-uninformative-late-rpv.rda")
+
+# inspect model
+summary(m.lud.r)  # similar estimates to full dataset
+plot(m.lud.r)
+pp_check(m.lud.r, nsamples = 100) 
+
+
+#### log-transformed models, specific priors, late dpi ####
+
+# PAV model
+m.lid.p <- update(m.li.p, newdata = d.at.p.sub)
+
+# save model
+save(m.lid.p, file = "./output/exp-1-concentration-analysis-log-informative-late-pav.rda")
+
+# inspect model
+summary(m.lid.p) # similar estimates to uninformed
+plot(m.lid.p)
+pp_check(m.lid.p, nsamples = 100) # same issue as uninformed
+
+# RPV model
+m.lid.r <- update(m.li.r, newdata = d.at.r.sub)
+
+# save model
+save(m.lid.r, file = "./output/exp-1-concentration-analysis-log-informative-late-rpv.rda")
+
+# inspect model
+summary(m.lid.r) # similar estimates to uninformed
+plot(m.lid.r)
+pp_check(m.lid.r, nsamples = 100) 
+
+
 #### save data for plotting ####
 
 # save file
-write_csv(d.at.p, "./output/exp-1-qPCR-analysis-pav-data.csv")
-write_csv(d.at.r, "./output/exp-1-qPCR-analysis-rpv-data.csv")
+write_csv(d.at.p, "./output/exp-1-concentration-analysis-pav-data.csv")
+write_csv(d.at.r, "./output/exp-1-concentration-analysis-rpv-data.csv")
+write_csv(d.at.c, "./output/exp-1-concentration-analysis-coinfection-data.csv")
+write_csv(dat2, "./output/exp-1-concentration-analysis-all-data.csv")

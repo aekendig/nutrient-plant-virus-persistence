@@ -11,8 +11,8 @@ library(tidyverse)
 library(brms)
 
 # import data
-pd <- read_csv("./output/lacroix-qPCR-pav-data.csv") # from lacroix-qPCR-priors.R
-rd <- read_csv("./output/lacroix-qPCR-rpv-data.csv") # from lacroix-qPCR-priors.R
+pd <- read_csv("./output/lacroix-concentration-pav-data.csv") # from lacroix-concentration-priors.R
+rd <- read_csv("./output/lacroix-concentration-rpv-data.csv") # from lacroix-concentration-priors.R
 td <- read_csv("./data/NVE_TransmissionFromS1ToS2_ForModellingProject_12-4-14.csv")
 # data collected by C. Lacroix
 

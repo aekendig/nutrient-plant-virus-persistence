@@ -1,4 +1,4 @@
-## Goal: Integrate transmisison data and qPCR data from experiment 1 and analyze treatment effects
+## Goal: Integrate transmisison data and concentration data from experiment 1 and analyze treatment effects
 
 #### set up ####
 
@@ -12,8 +12,8 @@ library(bayesplot)
 library(cowplot)
 
 # import data
-qdatp <- read_csv("./output/exp-1-qPCR-analysis-pav-data.csv")
-qdatr <- read_csv("./output/exp-1-qPCR-analysis-rpv-data.csv")
+qdatp <- read_csv("./output/exp-1-concentration-analysis-pav-data.csv")
+qdatr <- read_csv("./output/exp-1-concentration-analysis-rpv-data.csv")
 tdat <- read_csv("./data/transmission-data.csv") # came from MeanqPCR_VCEBaseDataset_Trans_ManUp_123016.csv (unnecessary columns and rows removed)
 sdat <- read_csv("./data/sample-exp-molc-data.csv")
 
@@ -34,7 +34,7 @@ plot_intervals <- function(data) {
 # modified from Tristan Mahr (https://www.tjmahr.com/ggplot2-how-to-do-nothing/)
 
 
-#### edit qPCR data ####
+#### edit concentration data ####
 
 # add aphid mass to dataset and calculate new concentration metrics
 sdat2 <- sdat %>%
@@ -122,7 +122,7 @@ tdat3 <- tdat2 %>%
   filter(!(ID == "2.7.RPV.N.3.N" & PAV_t == 0))
 
 
-#### combine qPCR and transmission data ####
+#### combine concentration and transmission data ####
 
 # only keep overlapping data
 datp <- inner_join(qdatp3, tdat3)
