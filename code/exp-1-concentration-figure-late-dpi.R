@@ -130,7 +130,7 @@ plotA <- avgp %>%
   ylab("Est. ln(PAV concentration)") +
   ggtitle("Full dataset")
 
-plotB <- avgr %>%
+plotC <- avgr %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   median_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
@@ -150,17 +150,17 @@ plotB <- avgr %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
-  ylab("Est. ln(RPV concentration)")
+  ylab("Est. ln(RPV concentration)")+
+  ylim(6.9, 9.4)
 
-plotC <- avgpd %>%
+plotB <- avgpd %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   median_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
   geom_point(aes(shape = Inoculation), position = position_dodge(0.3)) +
   geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
   theme_bw() +
-  theme(axis.title.y = element_text(color = "black", size = lg_txt),
-        axis.title.x = element_blank(),
+  theme(axis.title = element_blank(),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
         plot.title = element_text(color = "black", size = lg_txt, hjust = 0.5),
@@ -186,7 +186,8 @@ plotD <- avgrd %>%
   geom_point(aes(shape = Inoculation), position = position_dodge(0.3)) +
   geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
   theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
+  theme(axis.title.x = element_text(color = "black", size = lg_txt),
+        axis.title.y = element_blank(),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
         legend.title = element_text(color = "black", size = sm_txt),
@@ -200,17 +201,18 @@ plotD <- avgrd %>%
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), name = "Inoc.") +
   xlab("Nutrient") +
-  ylab("Est. ln(RPV concentration)")
+  ylab("Est. ln(RPV concentration)")+
+  ylim(6.9, 9.4)
 
 
 #### combine plots ####
 
 # combine
-plot <- plot_grid(plotA, plotC, plotB, plotD, 
+plot <- plot_grid(plotA, plotB, plotC, plotD, 
                   labels = c("A", "B", "C", "D"), 
                   label_size = lg_txt, 
-                  rel_widths = c(0.7, 1, 0.7, 1),
-                  label_x = c(0, 0, 0, 0))
+                  rel_widths = c(0.75, 1, 0.75, 1),
+                  label_x = c(0, -0.03, 0, -0.03))
 
 # print
 pdf("./output/exp-1-concentration-figure-late-dpi.pdf", width = 4.75, height = 4)
