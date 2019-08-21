@@ -33,6 +33,15 @@ dpi <- tibble(
   dpi = c(5, 8, 12, 16, 19, 22, 26, 29)
 )
 
+# sample size in experiments
+dat %>%
+  filter(material == "shoot" & inoc != "healthy") %>%
+  select(target, nutrient, inoc, round, time, replicate) %>%
+  unique() %>%
+  group_by(target, nutrient, inoc) %>%
+  summarise(reps = n()) %>%
+  data.frame()
+  
 # remove samples:
 # poor standard curve efficiency
 # quantities below standard curve, but greater than 1e3 (not sure if these should be zeros or not; standards removed if contamination had higher concentration)
@@ -272,12 +281,32 @@ d.at %>%
   summarise(reps = length(unique(sample))) %>%
   filter(reps >1) # 19
 
+# incindental inoculations
+d.at %>%
+  filter(target == "PAV" & inoc == "RPV")%>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = sum(quant_zero == 0))
+
+d.at %>%
+  filter(target == "RPV" & inoc == "PAV")%>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = sum(quant_zero == 0))
+
 # data by virus
 d.at.p <- d.at %>%
   filter(target == "PAV" & inoc != "RPV") 
 
 d.at.r <- d.at %>%
   filter(target == "RPV" & inoc != "PAV")
+
+# sample sizes
+d.at.p %>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = n())
+
+d.at.r %>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = n())
 
 
 #### coinfection correlation ####

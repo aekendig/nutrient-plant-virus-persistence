@@ -19,6 +19,17 @@ load("./output/exp-1-transmission-pav-up-concentration-informative-priors.rda")
 load("./output/exp-1-transmission-rpv-up-concentration-informative-priors.rda")
 
 
+#### print model summaries ####
+
+tab_model(mpuci)
+summary(mpuci)
+prior_summary(mpuci)
+
+tab_model(mruci)
+summary(mruci)
+prior_summary(mruci)
+
+
 #### edit data ####
 
 # inoculation column

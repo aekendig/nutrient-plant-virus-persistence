@@ -9,6 +9,7 @@ rm(list=ls())
 library(tidyverse)
 library(ggridges)
 library(cowplot)
+library(sjPlot)
 
 # import data
 datp <- read_csv("./output/exp-1-binomial-analysis-pav-data.csv")
@@ -26,6 +27,16 @@ sm_txt = 6
 lg_txt = 8
 an_txt = 1
 
+
+#### print model summaries ####
+
+tab_model(m.bu.p)
+summary(m.bu.p)
+prior_summary(m.bu.p)
+
+tab_model(m.bu.r)
+summary(m.bu.r)
+prior_summary(m.bu.r)
 
 #### edit data ####
 

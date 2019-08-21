@@ -121,12 +121,34 @@ tdat3 <- tdat2 %>%
   filter(!(ID == "2.4.PAV.P.3.N" & RPV_t == 0)) %>%
   filter(!(ID == "2.7.RPV.N.3.N" & PAV_t == 0))
 
+# sample size
+tdat3 %>%
+  group_by(inoc, nutrient, nutrient_t) %>%
+  summarise(PAV = sum(!is.na(PAV_t)), RPV = sum(!is.na(RPV_t))) %>%
+  data.frame()
+
 
 #### combine concentration and transmission data ####
 
 # only keep overlapping data
 datp <- inner_join(qdatp3, tdat3)
 datr <- inner_join(qdatr3, tdat3)
+
+# sample sizes
+datp %>%
+  group_by(inoc, nutrient, nutrient_t) %>%
+  summarise(reps = n(), RPV = sum(RPV_t == 1)) %>%
+  data.frame()
+
+datr %>%
+  group_by(inoc, nutrient, nutrient_t) %>%
+  summarise(reps = n(), PAV = sum(PAV_t == 1)) %>%
+  data.frame()
+
+# incindental inoculations
+datp %>%
+  filter(inoc == "PAV") %>%
+  summarise(tot = n(), RPV = sum(RPV_t == 1))
 
 # make N and P columns for transmission
 # coinfection column for source plant

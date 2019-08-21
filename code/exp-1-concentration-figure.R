@@ -21,6 +21,17 @@ load("./output/exp-1-concentration-analysis-log-informative-rpv.rda")
 load("./output/exp-1-concentration-analysis-log-informative-pav.rda")
 
 
+#### print model summaries ####
+
+tab_model(m.li.p)
+summary(m.li.p)
+prior_summary(m.li.p)
+
+tab_model(m.li.r)
+summary(m.li.r)
+prior_summary(m.li.r)
+
+
 #### edit data ####
 
 # inoculation column
