@@ -8,6 +8,7 @@ source("./code/exp-1-qPCR-raw-data-processing.R")
 # clears environment
 # loads tidyverse
 # sets working directory to data folder
+sdat <- read_csv("./data/sample-exp-molc-data.csv")
 
 # load libraries
 library(brms)
@@ -33,6 +34,15 @@ dpi <- tibble(
   dpi = c(5, 8, 12, 16, 19, 22, 26, 29)
 )
 
+# sample size in experiments
+dat %>%
+  filter(material == "shoot" & inoc != "healthy") %>%
+  select(target, nutrient, inoc, round, time, replicate) %>%
+  unique() %>%
+  group_by(target, nutrient, inoc) %>%
+  summarise(reps = n()) %>%
+  data.frame()
+  
 # remove samples:
 # poor standard curve efficiency
 # quantities below standard curve, but greater than 1e3 (not sure if these should be zeros or not; standards removed if contamination had higher concentration)
@@ -272,12 +282,43 @@ d.at %>%
   summarise(reps = length(unique(sample))) %>%
   filter(reps >1) # 19
 
+# select rows from sdat
+sdat2 <- sdat %>%
+  filter(material == "shoot") %>%
+  select(round, time, inoc, nutrient, replicate, RTPCR_PAV, RTPCR_RPV)
+
+# incindental inoculations
+d.at %>%
+  left_join(sdat2) %>%
+  filter(inoc == "PAV" & ((target == "RPV" & quant_zero == 0) | RTPCR_RPV == 1)) %>%
+  select(round, time, inoc, nutrient, replicate) %>%
+  unique() %>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = n())
+
+d.at %>%
+  left_join(sdat2) %>%
+  filter(inoc == "RPV" & ((target == "PAV" & quant_zero == 0) | RTPCR_PAV == 1)) %>%
+  select(round, time, inoc, nutrient, replicate) %>%
+  unique() %>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = n())
+
 # data by virus
 d.at.p <- d.at %>%
   filter(target == "PAV" & inoc != "RPV") 
 
 d.at.r <- d.at %>%
   filter(target == "RPV" & inoc != "PAV")
+
+# sample sizes
+d.at.p %>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = n())
+
+d.at.r %>%
+  group_by(inoc, nutrient) %>%
+  summarise(reps = n())
 
 
 #### coinfection correlation ####
