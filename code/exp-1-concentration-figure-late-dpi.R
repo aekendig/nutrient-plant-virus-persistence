@@ -7,7 +7,8 @@ rm(list=ls())
 
 # load packages
 library(tidyverse)
-library(ggridges)
+library(tidybayes)
+library(brms)
 library(cowplot)
 
 # load models
@@ -127,7 +128,7 @@ plotA <- avgp %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
-  ylab("Est. ln(PAV concentration)") +
+  ylab("Est. ln(PAV density)") +
   ggtitle("Full dataset")
 
 plotC <- avgr %>%
@@ -150,7 +151,7 @@ plotC <- avgr %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
-  ylab("Est. ln(RPV concentration)")+
+  ylab("Est. ln(RPV density)")+
   ylim(6.9, 9.4)
 
 plotB <- avgpd %>%
@@ -164,22 +165,23 @@ plotB <- avgpd %>%
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
         plot.title = element_text(color = "black", size = lg_txt, hjust = 0.5),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
-        legend.key = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   xlab("Nutrient") +
-  ylab("Est. ln(PAV concentration)") +
+  ylab("Est. ln(PAV density)") +
   ggtitle("Later dpi dataset")
 
 plotD <- avgrd %>%
-  mutate(Inoculation = recode(Inoculation, coinfection = "co.", single = "sing.")) %>%
+  mutate(Inoculation = recode(Inoculation, coinfection = "co")) %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   median_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
@@ -190,32 +192,47 @@ plotD <- avgrd %>%
         axis.title.y = element_blank(),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
-        legend.key = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal, guide = F) +
-  scale_shape_manual(values = c(19, 21), name = "Inoc.") +
+  scale_shape_manual(values = c(19, 21), name = "Inoculation") +
   xlab("Nutrient") +
-  ylab("Est. ln(RPV concentration)")+
+  ylab("Est. ln(RPV density)")+
   ylim(6.9, 9.4)
 
 
 #### combine plots ####
 
+# extract legends
+legB <- get_legend(plotB)
+legD <- get_legend(plotD)
+
 # combine
-plot <- plot_grid(plotA, plotB, plotC, plotD, 
-                  labels = c("A", "B", "C", "D"), 
+top_row <- cowplot::plot_grid(plotA, plotB + theme(legend.position = "none"), legB, 
+                  labels = c("A", "B"), 
+                  nrow = 1,
                   label_size = lg_txt, 
-                  rel_widths = c(0.75, 1, 0.75, 1),
-                  label_x = c(0, -0.03, 0, -0.03))
+                  rel_widths = c(1, 1, 0.3),
+                  label_x = c(0, -0.03))
+
+bottom_row <- cowplot::plot_grid(plotC, plotD + theme(legend.position = "none"), legD, 
+                              labels = c("C", "D"), 
+                              nrow = 1,
+                              label_size = lg_txt, 
+                              rel_widths = c(1, 1, 0.3),
+                              label_x = c(0, -0.03))
+
+plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 
 # print
-pdf("./output/exp-1-concentration-figure-late-dpi.pdf", width = 4.75, height = 4)
+pdf("./output/exp-1-concentration-figure-late-dpi.pdf", width = 6, height = 4)
 plot
 dev.off()
 

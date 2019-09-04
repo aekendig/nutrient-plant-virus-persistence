@@ -7,10 +7,10 @@ rm(list=ls())
 
 # load packages
 library(tidyverse)
-library(ggridges)
 library(cowplot)
 library(brms)
 library(tidybayes)
+library(sjPlot)
 
 # import data
 pdat <- read_csv("./output/exp-1-concentration-analysis-pav-data.csv")
@@ -19,6 +19,14 @@ rdat <- read_csv("./output/exp-1-concentration-analysis-rpv-data.csv")
 # load models
 load("./output/exp-1-concentration-analysis-log-informative-rpv.rda")
 load("./output/exp-1-concentration-analysis-log-informative-pav.rda")
+
+# color palette
+col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
+
+# text sizes
+sm_txt = 6
+lg_txt = 8
+an_txt = 2
 
 
 #### print model summaries ####
@@ -34,16 +42,18 @@ prior_summary(m.li.r)
 
 #### edit data ####
 
-# inoculation column
+# inoculation column, nutrient column, predicted values (tried including these in the time series)
 pdat <- pdat %>%
   mutate(inoculation = ifelse(co == 0, "single", "co"),
          inoculation = fct_relevel(inoculation, "single"),
-         nutrient = fct_relevel(nutrient, "low", "N", "P"))
+         nutrient = fct_relevel(nutrient, "low", "N", "P"),
+         pred = predict(m.li.p)[, 1])
 
 rdat <- rdat %>%
   mutate(inoculation = ifelse(co == 0, "single", "co"),
          inoculation = fct_relevel(inoculation, "single"),
-         nutrient = fct_relevel(nutrient, "low", "N", "P"))
+         nutrient = fct_relevel(nutrient, "low", "N", "P"),
+         pred = predict(m.li.r)[, 1])
 
 # posterior samples
 postr <- posterior_samples(m.li.r)
@@ -121,40 +131,32 @@ sloper %>% select(treatment, Inoculation, Nutrient) %>% unique()
 
 
 #### figure of raw data ####
-
-# color palette
-col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
-
-# text sizes
-sm_txt = 6
-lg_txt = 8
-an_txt = 2
-
+ 
 # PAV (concentration over time)
 plotA <- ggplot(pdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
   stat_summary(fun.data = "mean_se", geom = "errorbar", width = 0.1, position = position_dodge(0.6), aes(size = inoculation)) +
   stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation), fill = "white") +
-  stat_summary(fun.y = "mean", geom = "line", position = position_dodge(0.6), aes(linetype = inoculation)) +
+  stat_summary(aes(linetype = inoculation), fun.y = "mean", geom = "line", position = position_dodge(0.6)) +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
-        legend.position = c(0.42, 0.92),
+        #legend.position = c(0.42, 0.92),
         legend.background = element_blank(),
         legend.key = element_blank(),
-        legend.direction = "horizontal",
+        #legend.direction = "horizontal",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank()) +
   scale_size_manual(values = c(0.5, 0.5), guide = F) +
   scale_colour_manual(values = col_pal,
-                      name = "Nutrient") +
+                      name = "Nutrient", guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
   xlab("Days post inoculation") +
-  ylab("ln(PAV concentration)")
+  ylab("ln(PAV density)")
 
 # RPV (concentration over time)
 plotB <- ggplot(rdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
@@ -165,22 +167,22 @@ plotB <- ggplot(rdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
-        legend.position = c(0.34, 0.93),
+        #legend.position = c(0.34, 0.93),
         legend.background = element_blank(),
         legend.key = element_blank(),
-        legend.direction = "horizontal",
+        #legend.direction = "horizontal",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
         legend.key.width = unit(1, "cm")) +
   scale_size_manual(values = c(0.5, 0.5), name = "Inoculation") +
-  scale_colour_manual(values = col_pal, guide = F) +
+  scale_colour_manual(values = col_pal, name = "Nutrient") +
   scale_shape_manual(values = c(19, 21), name = "Inoculation") +
   scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
   xlab("Days post inoculation") +
-  ylab("ln(RPV concentration)")
+  ylab("ln(RPV density)")
 
 
 #### figure of category averages ####
@@ -205,7 +207,7 @@ plotC <- avgp %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
-  ylab("Est. ln(PAV concentration)")
+  ylab("Est. ln(PAV density)")
 
 plotD <- avgr %>%
   group_by(treatment, Nutrient, Inoculation) %>%
@@ -227,7 +229,7 @@ plotD <- avgr %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
-  ylab("Est. ln(RPV concentration)")
+  ylab("Est. ln(RPV density)")
 
 
 #### figure of differences between treatments ####
@@ -334,14 +336,38 @@ plotD <- avgr %>%
 
 #### combine plots ####
 
-# combine
-plot <- plot_grid(plotA, plotC, plotB, plotD, 
-                  labels = c("A", "B", "C", "D"), 
-                  label_size = lg_txt, 
-                  rel_widths = c(1, 0.55, 1, 0.55),
-                  label_x = c(0, 0, 0, 0))
+# extract legend
+legB <- get_legend(plotB + theme(legend.spacing.y = unit(-0.1, "mm"), 
+                                 legend.key = element_rect(size = 0.5, color = "white"),
+                                 legend.key.size = unit(0.7, 'lines')))
 
-# plot <- plot_grid(plotA, plotC, plotD, plotB, plotE, plotF, 
+# combine plots
+plots <- align_plots(plotA, plotB + theme(legend.position = "none"), plotC, plotD, align = 'v', axis = 'l')
+
+# combine top row
+top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
+                              labels = c("A", "B"), 
+                              label_size = lg_txt, 
+                              nrow = 1)
+# combine bottom row
+bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB, 
+                  labels = c("C", "D"), 
+                  label_size = lg_txt, 
+                  rel_widths = c(1, 1, 0.3),
+                  nrow = 1,
+                  align = "h",
+                  axis = "t")
+
+# combine all
+plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
+
+# print
+pdf("./output/exp-1-concentration-figure.pdf", width = 6, height = 4)
+plot
+dev.off()
+
+
+# plot <- cowplot::plot_grid(plotA, plotC, plotD, plotB, plotE, plotF, 
 #                   labels = c("A", "B", "C", "D", "E", "F"), 
 #                   label_size = lg_txt, 
 #                   rel_widths = c(1, 0.55, 0.45, 1, 0.55, 0.45),
@@ -353,12 +379,6 @@ plot <- plot_grid(plotA, plotC, plotB, plotD,
 #   draw_label(label = "Proportion change in RPV concentration", x = 0.77, y = 0.04, size = lg_txt) +
 #   draw_label(label = "Proportion change in PAV concentration", x = 0.77, y = 0.54, size = lg_txt)
 # dev.off()
-
-# print
-pdf("./output/exp-1-concentration-figure.pdf", width = 5, height = 4)
-plot
-dev.off()
-
 
 #### numbers for text ####
 

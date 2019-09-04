@@ -7,8 +7,9 @@ rm(list=ls())
 
 # load packages
 library(tidyverse)
-library(ggridges)
+library(tidybayes)
 library(cowplot)
+library(brms)
 library(sjPlot)
 
 # import data
@@ -124,8 +125,7 @@ plotA <- datp %>%
         panel.grid.minor = element_blank(),
         strip.background = element_blank()) +
   scale_size_manual(values = c(0.5, 0.5), guide = F) +
-  scale_colour_manual(values = col_pal,
-                      name = "Nutrient") +
+  scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
   ylim(0, 1.07) + 
@@ -141,18 +141,18 @@ plotB <- datr %>%
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_text(color = "black", size = lg_txt),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
-        legend.key = element_blank(),
-        legend.position = c(0.5, 0.95),
-        legend.direction = "horizontal",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        legend.key.width = unit(1, "cm"),
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines')) +
   scale_size_manual(values = c(0.5, 0.5), guide = F) +
-  scale_colour_manual(values = col_pal,
-                      name = "Nutrient", guide = F) +
+  scale_colour_manual(values = col_pal, name = "Nutrient") +
   scale_shape_manual(values = c(19, 21), name = "Inoculation") +
   scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
   ylim(0, 1.07) + 
@@ -210,14 +210,30 @@ plotD <- avgr %>%
 
 #### combine plots ####
 
-# combine
-plot <- plot_grid(plotA, plotC, plotB, plotD, 
-                  labels = c("A", "B", "C", "D"), 
-                  label_size = lg_txt, 
-                  rel_widths = c(1, 0.55, 1, 0.55),
-                  label_x = c(0, 0, 0, 0))
+# extract legend
+legB <- get_legend(plotB)
+
+# combine plots
+plots <- align_plots(plotA, plotB + theme(legend.position = "none"), plotC, plotD, align = 'v', axis = 'l')
+
+# combine top row
+top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
+                              labels = c("A", "B"), 
+                              label_size = lg_txt, 
+                              nrow = 1)
+# combine bottom row
+bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB, 
+                                 labels = c("C", "D"), 
+                                 label_size = lg_txt, 
+                                 rel_widths = c(1, 1, 0.3),
+                                 nrow = 1,
+                                 align = "h",
+                                 axis = "t")
+
+# combine all
+plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 
 # print
-pdf("./output/exp-1-binomial-figure.pdf", width = 5, height = 4)
+pdf("./output/exp-1-binomial-figure.pdf", width = 6, height = 4)
 plot
 dev.off()

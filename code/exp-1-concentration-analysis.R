@@ -8,6 +8,7 @@ source("./code/exp-1-qPCR-raw-data-processing.R")
 # clears environment
 # loads tidyverse
 # sets working directory to data folder
+sdat <- read_csv("./data/sample-exp-molc-data.csv")
 
 # load libraries
 library(brms)
@@ -281,16 +282,27 @@ d.at %>%
   summarise(reps = length(unique(sample))) %>%
   filter(reps >1) # 19
 
+# select rows from sdat
+sdat2 <- sdat %>%
+  filter(material == "shoot") %>%
+  select(round, time, inoc, nutrient, replicate, RTPCR_PAV, RTPCR_RPV)
+
 # incindental inoculations
 d.at %>%
-  filter(target == "PAV" & inoc == "RPV")%>%
+  left_join(sdat2) %>%
+  filter(inoc == "PAV" & ((target == "RPV" & quant_zero == 0) | RTPCR_RPV == 1)) %>%
+  select(round, time, inoc, nutrient, replicate) %>%
+  unique() %>%
   group_by(inoc, nutrient) %>%
-  summarise(reps = sum(quant_zero == 0))
+  summarise(reps = n())
 
 d.at %>%
-  filter(target == "RPV" & inoc == "PAV")%>%
+  left_join(sdat2) %>%
+  filter(inoc == "RPV" & ((target == "PAV" & quant_zero == 0) | RTPCR_PAV == 1)) %>%
+  select(round, time, inoc, nutrient, replicate) %>%
+  unique() %>%
   group_by(inoc, nutrient) %>%
-  summarise(reps = sum(quant_zero == 0))
+  summarise(reps = n())
 
 # data by virus
 d.at.p <- d.at %>%

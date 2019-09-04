@@ -7,8 +7,9 @@ rm(list=ls())
 
 # load packages
 library(tidyverse)
-library(ggridges)
+library(tidybayes)
 library(cowplot)
+library(sjPlot)
 
 # import data
 datp <- read_csv("./output/exp-1-transmission-analysis-pav-data.csv")
@@ -17,6 +18,14 @@ datr <- read_csv("./output/exp-1-transmission-analysis-rpv-data.csv")
 # load models
 load("./output/exp-1-transmission-pav-up-concentration-informative-priors.rda")
 load("./output/exp-1-transmission-rpv-up-concentration-informative-priors.rda")
+
+# color palette
+col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
+
+# text sizes
+sm_txt = 6
+lg_txt = 8
+an_txt = 1
 
 
 #### print model summaries ####
@@ -299,14 +308,6 @@ datr_pred <- datr_pred %>%
 
 #### concentration-transmission figure ####
 
-# color palette
-col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
-
-# text sizes
-sm_txt = 6
-lg_txt = 8
-an_txt = 1
-
 # PAV concentration
 pconcp <- ggplot(datp, aes(x = conc)) +
     geom_point(aes(y = t_up, color = nutrient, shape = inoculation), position = position_jitter(width = 0, height = 0.03), alpha = 0.5) +
@@ -330,7 +331,7 @@ pconcp <- ggplot(datp, aes(x = conc)) +
                       name = "Nutrient", guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
-  xlab("PAV concentration") +
+  xlab("PAV density") +
   ylab("PAV transmission")
 
 # RPV concentration
@@ -342,7 +343,7 @@ pconcr <- ggplot(datr, aes(x = conc)) +
     theme(axis.title = element_text(color = "black", size = lg_txt),
           axis.text = element_text(color = "black", size = sm_txt),
           strip.text = element_blank(),
-          legend.title = element_text(color = "black", size = sm_txt),
+          legend.title = element_text(color = "black", size = lg_txt),
           legend.text = element_text(color = "black", size = sm_txt),
           legend.background = element_blank(),
           legend.key = element_rect(color = "white", size = 0.5),
@@ -355,15 +356,18 @@ pconcr <- ggplot(datr, aes(x = conc)) +
     scale_colour_manual(values = col_pal,
                         name = "Source plant\n nutrient") +
     scale_shape_manual(values = c(19, 21), name = "Inoculation") +
-    xlab("RPV concentration") +
+    xlab("RPV density") +
     ylab("RPV transmission")
 
-pconc <- plot_grid(pconcp, pconcr, 
-                  labels = c("A", "B"), 
-                  rel_widths = c(0.72, 1),
-                  label_size = lg_txt)
+pconcleg <- get_legend(pconcr)
 
-pdf("./output/exp-1-concentration-transmission-figure.pdf", width = 4.75, height = 2)
+pconc <- cowplot::plot_grid(pconcp, pconcr + theme(legend.position = "none"), pconcleg, 
+                  labels = c("A", "B"), 
+                  rel_widths = c(1, 1, 0.3),
+                  label_size = lg_txt,
+                  nrow = 1)
+
+pdf("./output/exp-1-concentration-transmission-figure.pdf", width = 6, height = 2.5)
 pconc
 dev.off()
 
@@ -389,8 +393,7 @@ plotA <- datp %>%
         panel.grid.minor = element_blank(),
         strip.background = element_blank()) +
   scale_size_manual(values = c(0.5, 0.5), guide = F) +
-  scale_colour_manual(values = col_pal,
-                      name = "Source plant nutrient") +
+  scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
   ylim(0, 1.07) + 
@@ -406,18 +409,19 @@ plotB <- datr %>%
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_text(color = "black", size = lg_txt),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
-        legend.key = element_blank(),
-        legend.position = c(0.5, 0.95),
-        legend.direction = "horizontal",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        legend.key.width = unit(1, "cm"),
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines')) +
   scale_size_manual(values = c(0.5, 0.5), guide = F) +
   scale_colour_manual(values = col_pal,
-                      name = "Nutrient", guide = F) +
+                      name = "Source plant\nnutrient") +
   scale_shape_manual(values = c(19, 21), name = "Inoculation") +
   scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
   ylim(0, 1.07) + 
@@ -482,12 +486,28 @@ plotD <- avgr %>%
 
 #### combine plots ####
 
-# combine
-plot <- plot_grid(plotA, plotC, plotB, plotD, 
-                  labels = c("A", "B", "C", "D"), 
-                  label_size = lg_txt, 
-                  rel_widths = c(1, 0.75, 1, 0.75),
-                  label_x = c(0, 0, 0, 0))
+# extract legend
+legB <- get_legend(plotB)
+
+# combine plots
+plots <- align_plots(plotA, plotB + theme(legend.position = "none"), plotC, plotD, align = 'v', axis = 'l')
+
+# combine top row
+top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
+                              labels = c("A", "B"), 
+                              label_size = lg_txt, 
+                              nrow = 1)
+# combine bottom row
+bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB, 
+                                 labels = c("C", "D"), 
+                                 label_size = lg_txt, 
+                                 rel_widths = c(1, 1, 0.3),
+                                 nrow = 1,
+                                 align = "h",
+                                 axis = "t")
+
+# combine all
+plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 
 # print
 pdf("./output/exp-1-transmission-figure.pdf", width = 6, height = 4)
@@ -721,7 +741,7 @@ dev.off()
 #### combine density plots ####
 
 # combine
-# peff <- plot_grid(plotA, plotB, plotC, plotD, plotE, plotF, plotG, plotH,
+# peff <- cowplot::plot_grid(plotA, plotB, plotC, plotD, plotE, plotF, plotG, plotH,
 #                   labels = c("A", "B", "C", "D", "E", "F", "G", "H"),
 #                   label_size = lg_txt,
 #                   rel_widths = c(1, 0.8, 0.8, 0.8, 1, 0.8, 0.8, 0.8),

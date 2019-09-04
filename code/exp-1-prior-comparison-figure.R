@@ -7,8 +7,9 @@ rm(list=ls())
 
 # load packages
 library(tidyverse)
-library(ggridges)
+library(tidybayes)
 library(cowplot)
+library(brms)
 
 # load models
 load("./output/exp-1-concentration-analysis-log-uninformative-rpv.rda")
@@ -339,7 +340,7 @@ pcpu <- avgcpu %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
-  ylab("Est. ln(PAV concentration)") +
+  ylab("Est. ln(PAV density)") +
   ggtitle("Uninformative") +
   ylim(4.5, 6.6)
 
@@ -354,17 +355,18 @@ pcpi <- avgcpi %>%
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
         plot.title = element_text(color = "black", size = lg_txt, hjust = 0.5),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
-        legend.key = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  ggtitle("Informed") +
+  ggtitle("Informative") +
   ylim(4.5, 6.6)
 
 pcru <- avgcru %>%
@@ -386,12 +388,12 @@ pcru <- avgcru %>%
         legend.key.width = unit(1, "cm")) +
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
-  ylab("Est. ln(RPV concentration)") +
+  ylab("Est. ln(RPV density)") +
   xlab("Nutrient") +
   ylim(6.9, 9)
 
 pcri <- avgcri %>%
-  mutate(Inoculation = recode(Inoculation, coinfection = "co.", single = "sing.")) %>%
+  mutate(Inoculation = recode(Inoculation, coinfection = "co")) %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   median_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
@@ -402,16 +404,17 @@ pcri <- avgcri %>%
         axis.title.y = element_blank(),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
-        legend.key = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal, guide = F) +
-  scale_shape_manual(values = c(19, 21), name = "Inoc.") +
+  scale_shape_manual(values = c(19, 21), name = "Inoculation") +
   xlab("Nutrient") +
   ylim(6.9, 9)
 
@@ -474,7 +477,8 @@ ptru <- avgtru %>%
   geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
   facet_wrap(~Nutrient_t, nrow = 1, strip.position = "bottom") +
   theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
+  theme(axis.title.x = element_text(color = "black", size = lg_txt),
+        axis.title.y = element_text(color = "black", size = lg_txt, hjust = 0.3),
         axis.text.y = element_text(color = "black", size = sm_txt),
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
@@ -525,25 +529,42 @@ ptri <- avgtri %>%
 
 #### combine plots ####
 
+# extract legends
+nleg <- get_legend(pcpi)
+ileg <- get_legend(pcri)
+
 # combine
-plot1 <- plot_grid(pcpu, pcpi, pcru, pcri, 
-                  labels = c("A", "B", "C", "D"), 
-                  ncol = 2,
+plot1 <- cowplot::plot_grid(pcpu, pcpi + theme(legend.position = "none"), nleg, 
+                  labels = c("A", "B"), 
+                  nrow = 1,
                   label_size = lg_txt, 
-                  rel_widths = c(0.75, 1, 0.75, 1),
-                  label_x = c(0, -0.03, 0, -0.03))
+                  rel_widths = c(1, 1, 0.3),
+                  label_x = c(0, -0.03))
 
-plot2 <- plot_grid(ptpu, ptpi, ptru, ptri, 
-                  labels = c("E", "F", "G", "H"), 
-                  ncol = 2,
+plot2 <- cowplot::plot_grid(pcru, pcri + theme(legend.position = "none"), ileg,
+                            labels = c("C", "D"), 
+                            nrow = 1,
+                            label_size = lg_txt, 
+                            rel_widths = c(1, 1, 0.3),
+                            label_x = c(0, -0.03))
+
+plot3 <- cowplot::plot_grid(ptpu, ptpi, 
+                  labels = c("E", "F"), 
+                  nrow = 1,
                   label_size = lg_txt, 
-                  rel_heights = c(0.76, 0.76, 1, 1),
-                  label_x = c(0, -0.03, 0, -0.03))
+                  rel_heights = c(0.76, 0.76),
+                  label_x = c(0, -0.03))
 
-plot <- plot_grid(plot1, plot2, ncol = 1)
+plot4 <- cowplot::plot_grid(ptru, ptri, 
+                            labels = c("G", "H"), 
+                            nrow = 1,
+                            label_size = lg_txt, 
+                            label_x = c(0, -0.03))
+
+plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, ncol = 1)
 
 # print
-pdf("./output/exp-1-prior-comparison.pdf", width = 4.75, height = 8)
+pdf("./output/exp-1-prior-comparison.pdf", width = 6, height = 7)
 plot
 dev.off()
 
