@@ -27,7 +27,7 @@ cdat <- cdat %>%
 
 
 #### figure ####
-pdf("./output/exp-1-coinfection-correlation-figure.pdf", width = 2.5, height = 2.5)
+pdf("./output/exp-1-coinfection-correlation-figure.pdf", width = 3, height = 3)
 ggplot(cdat, aes(x = rpv_log_conc, y = pav_log_conc, colour = Nutrient)) +
   geom_point(shape = 21) +
   theme_bw() +
@@ -45,6 +45,6 @@ ggplot(cdat, aes(x = rpv_log_conc, y = pav_log_conc, colour = Nutrient)) +
         strip.background = element_blank(),
         legend.spacing.y = unit(0.001, "mm")) +
   scale_colour_manual(values = col_pal) +
-  xlab("ln(RPV concentration in coinfection)") +
-  ylab("ln(PAV concentration in coinfection)")
+  xlab("ln(RPV density in coinfection)") +
+  ylab("ln(PAV density in coinfection)")
 dev.off()
