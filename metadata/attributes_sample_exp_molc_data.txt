@@ -1,0 +1,33 @@
+attributeName	attributeDefinition	class	unit	dateTimeFormatString	missingValueCode	missingValueCodeExplanation
+round	"Experimental block (5, separated by time)"	numeric	dimensionless			NA
+time	Time that plants were harvested (sequence 1 - 8)	numeric	dimensionless			NA
+inoc	Inoculation treatment	categorical				NA
+nutrient	Nutrient treatment	categorical				NA
+replicate	Treatment by time replicate	numeric	dimensionless			NA
+high_N	"Whether or not nutrient treamtent had elevated N (1 or 0, respectively)"	numeric	dimensionless			NA
+high_P	"Whether or not nutrient treamtent had elevated P (1 or 0, respectively)"	numeric	dimensionless			NA
+material	Plant material used for molecular analysis	categorical				NA
+shoot_mass_g	Mass of leaves and stem	numeric	gram			NA
+root_mass_g	Mass of roots	numeric	gram			NA
+leaf_area_mm2	Area of leaves and stem	numeric	squareMillimeters			NA
+leaf_perim_mm	Perimeter of leaves and stem	numeric	millimeter			NA
+leaves	Number of leaves	numeric	dimensionless			NA
+mass_saved_g	Mass of shoot saved in freezer at -80 degrees C	numeric	gram			NA
+aphid_mass_g	Mass of shoot fed to aphids for transmission trial	numeric	gram			NA
+trans_N	"Whether or not transmission trial included a plant grown in the elevated N treatment  (1 or 0, respectively)"	numeric	dimensionless			NA
+trans_P	"Whether or not transmission trial included a plant grown in the elevated P treatment  (1 or 0, respectively)"	numeric	dimensionless			NA
+trans_NP	"Whether or not transmission trial included a plant grown in the elevated N and P treatment  (1 or 0, respectively)"	numeric	dimensionless			NA
+trans_L	"Whether or not transmission trial included a plant grown in the low nutrient treatment  (1 or 0, respectively)"	numeric	dimensionless			NA
+exp_notes	Notes from experimental set-up and harvesting	character				NA
+ext_group	Group the sample was in for total RNA extraction	numeric	dimensionless			NA
+ext_date	Date the sample was extracted	Date		MM/DD/YY		NA
+extractors	Initials of individuals that extracted the samples	character				NA
+mass_ext_mg	Mass of shoot used in extraction	numeric	milligram			NA
+ext_group_notes	Notes about the extraction (as a group)	character				NA
+ext_sample_notes	Notes about the extraction (specific to a sample)	character				NA
+RT_date	Date reverse transcription was performed on the sample	Date		MM/DD/YY		NA
+PCR_date	Date PCR was performed on the sample	Date		MM/DD/YY		NA
+gel_date	Date gel electrophoresis was performed on the sample	Date		MM/DD/YY		NA
+molc_notes	Notes about RT/PCR/gel electrophoresis	character				NA
+RTPCR_PAV	"Visibility of gel electrophoresis band for PAV for the sample (0 = not visible; 0.5 = visible, but very weak compared to the control; 1 = clearly visible)"	numeric	dimensionless			NA
+RTPCR_RPV	"Visibility of gel electrophoresis band for RPV for the sample (0 = not visible; 0.5 = visible, but very weak compared to the control; 1 = clearly visible)"	numeric	dimensionless			NA

@@ -1,0 +1,24 @@
+attributeName	attributeDefinition	class	unit	dateTimeFormatString	missingValueCode	missingValueCodeExplanation
+well		character				
+sample		categorical				
+target		categorical				
+task		categorical				
+reporter		categorical				
+quencher		categorical				
+cycle		character				
+cycle_mean		numeric	!Add units here!			
+cycle_sd		numeric	!Add units here!			
+quantity		numeric	!Add units here!			
+quantity_mean		numeric	!Add units here!			
+quantity_sd		numeric	!Add units here!			
+auto_threshold		categorical				
+threshold		numeric	!Add units here!			
+auto_baseline		categorical				
+baseline_start		numeric	!Add units here!			
+baseline_end		numeric	!Add units here!			
+comments		categorical				
+high_sd		categorical				
+no_amp		categorical				
+outlier_rg		categorical				
+exp_fail		categorical				
+qPCR_notes		categorical				

@@ -1,0 +1,14 @@
+attributeName	code	definition
+inoc	RPV	inoculated with RPV
+inoc	coinfection	inoculated with both viruses
+inoc	PAV	inoculated with PAV
+inoc	P/R	"unsure whether it was inoculated with PAV or RPV (labelling error), removed from the dataset in the code through an NA in material"
+nutrient	low	source plant grown with low treatment
+nutrient	N	source plant grown with elevated N treatment
+nutrient	N+P	source plant grown with elevated N and P treatment
+nutrient	P	source plant grown with elevated P treatment
+nutrient_t	N+P	receiving plant grown with elevated N and P treatment
+nutrient_t	P	receiving plant grown with elevated P treatment
+nutrient_t	low	receiving plant grown with low treatment
+nutrient_t	N	receiving plant grown with elevated N treatment
+material	shoot	stems and leaves
