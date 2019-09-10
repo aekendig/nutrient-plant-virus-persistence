@@ -1,0 +1,7 @@
+attributeName	attributeDefinition	class	unit	dateTimeFormatString	missingValueCode	missingValueCodeExplanation
+round	"Experimental block (5, separated by time)"	numeric	dimensionless			
+time	Time that plants were harvested (sequence 1 - 8)	numeric	dimensionless			
+inoc	Inoculation treatment	categorical				
+nutrient	Nutrient treatment	categorical				
+replicate	Treatment by time replicate	numeric	dimensionless			
+chlorophyll	Chlorophyll measurement on leaf	numeric	dimensionless			

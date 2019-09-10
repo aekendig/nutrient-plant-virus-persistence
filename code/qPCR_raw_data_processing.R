@@ -286,7 +286,7 @@ confun <- function(dat){
   return(findf)
 }
 
-# some standards appear to be prepared incorrectly - previously went through each run individually (see qPCR-run-comments.csv for notes)
+# some standards appear to be prepared incorrectly - previously went through each run individually (see qPCR-group-comments.csv for notes)
 
 # check notes
 qdat %>%

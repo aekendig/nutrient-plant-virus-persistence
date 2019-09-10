@@ -1,0 +1,24 @@
+attributeName	attributeDefinition	class	unit	dateTimeFormatString	missingValueCode	missingValueCodeExplanation
+well	position of sample in 96-well plate	character				
+sample	ID assigned to sample	categorical				
+target	virus species being targeted for qPCR	categorical				
+task	purpose of the sample	categorical				
+reporter	fluorescent dye probe used to detect amplification	categorical				
+quencher	molecule attached to the 3' end of the probes to prevent the reporter from emitting signal while the probe is still intact	categorical				
+cycle	PCR cycle at which the fluorescence meets the threshold in the amplification plot (lower concentration samples take longer and have higher cycle numbers)	numeric	dimensionless		Undetermined	
+cycle_mean	the mean of the cycles associated with a single sample-target combination	numeric	dimensionless		"NA"	
+cycle_sd	the standard deviation of the cycles associated with a single sample-target combination	numeric	dimensionless		"NA"	
+quantity	the automatically estimated amount of target in the well, based on cycle and standard curve	numeric	dimensionless		"NA"	
+quantity_mean	the mean of the quantities associated with a single sample-target combination	numeric	dimensionless		"NA"	
+quantity_sd	the standard deviation of the quantities associated with a single sample-target combination	numeric	dimensionless		"NA"	
+auto_threshold	indicator variable for whether or not the threshold was set automatically	categorical				
+threshold	the level of fluorescence above the baseline and within the exponential amplification region	numeric	dimensionless			
+auto_baseline	indicator variable for whether or not the baseline was set automatically	categorical				
+baseline_start	the lower end of the cycle range that defines background fluorescence	numeric	dimensionless			
+baseline_end	the upper end of the cycle range that defines background fluorescence	numeric	dimensionless			
+comments	comments entered during qPCR analysis	categorical			"NA"	
+high_sd	indicator that the cycle_sd value is high relative to a predetermined threshold	categorical				
+no_amp	indicator that the sample did not amplify (no fluorescence detected at or above the threshold)	categorical				
+outlier_rg	indicator that the well cycle has a large deviation from other replicate wells in the same sample-target combination (outlier in replicate group)	categorical				
+exp_fail	indicator that the automatic algorithm failed for the well (exponential algorithm failed)	categorical				
+qPCR_notes	notes regarding sample preparation or analysis	character				

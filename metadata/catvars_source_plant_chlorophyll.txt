@@ -1,0 +1,9 @@
+attributeName	code	definition
+inoc	PAV	inoculated with PAV
+inoc	RPV	inoculated with RPV
+inoc	healthy	mock-inoculated
+inoc	coinfection	inoculated with both viruses
+nutrient	N	grown with elevated N treatment
+nutrient	P	grown with elevated P treatment
+nutrient	N+P	grown with elevated N and P treatment
+nutrient	low	grown with low treatment
