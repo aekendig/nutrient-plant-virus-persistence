@@ -2,11 +2,12 @@
 
 ### Code and data associated with the manuscript "Nutrients mediate plant virus interactions through within-host density and transmission"
 
-#### R project
-##### nutrients-plant-viruses.Rproj
-*Run code within the R project to easily access data*
+### Contents
+- code: descriptions below
+- output: outputs of R scripts that are used as inputs to other R scripts (also in code directory) or as figures in manuscript
+- data: descriptions below (will be made publicly available on https://portal.edirepository.org)
+- metadata: EML-formatted metadata for each data file, see methods.txt for details on data collection
 
-#### code
 |code                                     |desription                                                                                        |
 |:----------------------------------------|:-------------------------------------------------------------------------------------------------|
 |coinfection_correlation_figure.R         |code to create figure of correlation between PAV and RPV in coinfection                           |
@@ -23,9 +24,6 @@
 |supplementary_truncated_dataset_figure.R |code to create supplementary figure of comparison between models with full and truncated datasets |
 |transmission_analysis.R                  |code to analyze transmission                                                                      |
 |transmission_figure_results.R            |code to create figure of treatment effects on transmission                                        |
-
-#### data
-*data will be made publicly available on <https://portal.edirepository.org>*
 
 |data                         |description                                                                                                                                                     |
 |:----------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -77,6 +75,4 @@
 |sample_exp_molc_data.csv     |sample experiment molecular data - includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants |
 |source_plant_chlorophyll.csv |chlorophyll measurements for source plants                                                                                                                      |
 |transmission_data.csv        |experimental treatments and molecular analysis information for receiving plants in transmission trials                                                          |
-#### metadata
-- EML-formatted metadata for each data file
-- see methods.txt for details on data collection
+
