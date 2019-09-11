@@ -16,10 +16,10 @@ library(bayesplot) # version used: 1.6.0
 rm(list = setdiff(ls(), c("dat")))
 
 # load models for priors
-load("./output/lacroix_concentration_n_pav.rda")
-load("./output/lacroix_concentration_co_pav.rda")
-load("./output/lacroix_concentration_n_rpv.rda")
-load("./output/lacroix_concentration_co_rpv.rda")
+# load("./output/lacroix_output/lacroix_concentration_n_pav.rda")
+# load("./output/lacroix_output/lacroix_concentration_co_pav.rda")
+# load("./output/lacroix_output/lacroix_concentration_n_rpv.rda")
+# load("./output/lacroix_output/lacroix_concentration_co_rpv.rda")
 
 
 #### edit data ####
@@ -415,8 +415,8 @@ ppc_dens_overlay(log(d.at.r$quant_rd), log(yrep.cu.r)) # not a very good fit
 # use the estimates for coinfection and N addition from CL's models
 
 # PAV model
-summary(m.c.p) # mean = 0.53, se = 1.29
-summary(m.n.p) # mean = -0.48, se = 0.52
+# summary(m.c.p) # mean = 0.53, se = 1.29
+# summary(m.n.p) # mean = -0.48, se = 0.52
 m.li.p <- brm(data = d.at.p, family = gaussian,
               log_conc ~ co * high_N * high_P,
               autocor = cor_ar(~time),
@@ -440,8 +440,8 @@ plot(marginal_effects(m.li.p), points = T)
 pp_check(m.li.p, nsamples = 100) # model distributions slightly higher, similar to model with uninformative priors
 
 # RPV model
-summary(m.c.r)
-summary(m.n.r)
+# summary(m.c.r)
+# summary(m.n.r)
 m.li.r <- update(m.li.p,
                  newdata = d.at.r,
                   prior = c(prior(normal(-0.33, 0.70), class = b, coef = co),

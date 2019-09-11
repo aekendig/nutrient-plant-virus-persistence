@@ -37,3 +37,7 @@ rsconnect/
 
 # Data
 /data/
+
+# Lacroix data and objects
+/data/lacroix_data/
+/output/lacriox_output/

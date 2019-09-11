@@ -1,5 +1,7 @@
 ## Goal: estimate priors for transmission analysis based on C. Lacroix's data
 
+# This script is for illustration only. You will not be able to run it without access to the directories lacroix_data and lacroix_output
+
 
 #### set up ####
 
@@ -106,7 +108,7 @@ mp <- brm(data = tdpc, family = bernoulli(),
               iter = 6000, warmup = 1000, chains = 3, cores = 2)
 plot(mp)
 summary(mp)
-save(mp, file = "./output/lacroix_transmission_pav.rda")
+save(mp, file = "./output/lacroix_output/lacroix_transmission_pav.rda")
 
 # RPV model 
 mr <- brm(data = tdrc, family = bernoulli(),
@@ -116,4 +118,4 @@ mr <- brm(data = tdrc, family = bernoulli(),
           iter = 6000, warmup = 1000, chains = 3, cores = 2)
 plot(mr)
 summary(mr)
-save(mr, file = "./output/lacroix_transmission_rpv.rda")
+save(mr, file = "./output/lacroix_output/lacroix_transmission_rpv.rda")

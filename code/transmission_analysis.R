@@ -19,8 +19,8 @@ tdat <- read_csv("./data/transmission_data.csv") # came from MeanqPCR_VCEBaseDat
 sdat <- read_csv("./data/sample_exp_molc_data.csv")
 
 # import models
-load("./output/lacroix_transmission_pav.rda")
-load("./output/lacroix_transmission_rpv.rda")
+# load("./output/lacroix_output/lacroix_transmission_pav.rda")
+# load("./output/lacroix_output/lacroix_transmission_rpv.rda")
 
 # functions
 plot_intervals <- function(data) {
@@ -386,22 +386,22 @@ plot_intervals(full_join(aruc, ardc))
 #### models with informative priors ####
 
 # compare estimates for prior model and model without priors
-summary(mp)
-aplc <- (as.array(mp)) %>%
-  mcmc_intervals_data(pars = c("b_Intercept", "b_conc_s", "b_co", "b_high_N", "b_high_P", "b_co:high_N", "b_high_N:high_P")) %>%
-  mutate(model = "PAV Lacroix")
-plot_intervals(full_join(apuc, aplc))
+# summary(mp)
+# aplc <- (as.array(mp)) %>%
+#   mcmc_intervals_data(pars = c("b_Intercept", "b_conc_s", "b_co", "b_high_N", "b_high_P", "b_co:high_N", "b_high_N:high_P")) %>%
+#   mutate(model = "PAV Lacroix")
+# plot_intervals(full_join(apuc, aplc))
 # some estimates in the opposite direction, but error bars generally larger
 
-summary(mr)
-arlc <- (as.array(mr)) %>%
-  mcmc_intervals_data(pars = c("b_Intercept", "b_conc_s", "b_co", "b_high_N", "b_high_P", "b_co:high_N", "b_co:high_P", "b_high_N:high_P", "b_co:high_N:high_P")) %>%
-  mutate(model = "RPV Lacroix")
-plot_intervals(full_join(aruc, arlc))
+# summary(mr)
+# arlc <- (as.array(mr)) %>%
+#   mcmc_intervals_data(pars = c("b_Intercept", "b_conc_s", "b_co", "b_high_N", "b_high_P", "b_co:high_N", "b_co:high_P", "b_high_N:high_P", "b_co:high_N:high_P")) %>%
+#   mutate(model = "RPV Lacroix")
+# plot_intervals(full_join(aruc, arlc))
 # estimates closer to zero
 
 # PAV model
-summary(mp)
+# summary(mp)
 
 mpuci <- update(mpuc,
                 prior = c(prior(normal(1.53, 0.60), class = Intercept),
@@ -432,7 +432,7 @@ apuci <- as.array(mpuci) %>%
 plot_intervals(full_join(apuc, apuci)) # slightly smaller errorbars, similar mean values
 
 # RPV model
-summary(mr)
+# summary(mr)
 
 mruci <- update(mruc,
                 prior = c(prior(normal(0.54, 0.30), class = Intercept),

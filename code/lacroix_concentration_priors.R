@@ -1,5 +1,7 @@
 ## Goal: estimate priors for concentration analysis based on C. Lacroix's data
 
+# This script is for illustration only. You will not be able to run it without access to the directories lacroix_data and lacroix_output
+
 
 #### set up ####
 
@@ -148,7 +150,7 @@ m.n.p <- brm(data = filter(p.d, inoc == "PAV" & high_P == 0), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.n.p)
 summary(m.n.p)
-save(m.n.p, file = "./output/lacroix_concentration_n_pav.rda")
+save(m.n.p, file = "./output/lacroix_output/lacroix_concentration_n_pav.rda")
 
 # PAV co model
 m.c.p <- brm(data = filter(p.d, nutrient == "N"), family = gaussian,
@@ -159,7 +161,7 @@ m.c.p <- brm(data = filter(p.d, nutrient == "N"), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.c.p)
 summary(m.c.p)
-save(m.c.p, file = "./output/lacroix_concentration_co_pav.rda")
+save(m.c.p, file = "./output/lacroix_output/lacroix_concentration_co_pav.rda")
 
 # RPV nutrient model
 m.n.r <- brm(data = filter(r.d, inoc == "RPV"), family = gaussian,
@@ -170,7 +172,7 @@ m.n.r <- brm(data = filter(r.d, inoc == "RPV"), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.n.r)
 summary(m.n.r)
-save(m.n.r, file = "./output/lacroix_concentration_n_rpv.rda")
+save(m.n.r, file = "./output/lacroix_output/lacroix_concentration_n_rpv.rda")
 
 # RPV coinfection model
 m.c.r <- brm(data = filter(r.d, high_P == 0), family = gaussian,
@@ -181,4 +183,4 @@ m.c.r <- brm(data = filter(r.d, high_P == 0), family = gaussian,
              control = list(adapt_delta = 0.99))
 plot(m.c.r)
 summary(m.c.r)
-save(m.c.r, file = "./output/lacroix_concentration_co_rpv.rda")
+save(m.c.r, file = "./output/lacroix_output/lacroix_concentration_co_rpv.rda")
