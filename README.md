@@ -1,6 +1,6 @@
 # nutrients-plant-viruses
 
-### Code and data associated with the manuscript "Nutrients mediate plant virus interactions through within-host density and transmission"
+### Code and data associated with the manuscript "Host nutrient supply mediates facilitation and competition between plant viruses"
 Preprint available here: http://biorxiv.org/cgi/content/short/761254v1
 
 ### Contents
