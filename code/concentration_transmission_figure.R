@@ -124,7 +124,7 @@ pconcr <- ggplot(datr, aes(x = conc)) +
 pconcleg <- get_legend(pconcr)
 
 pconc <- plot_grid(pconcp, pconcr + theme(legend.position = "none"), pconcleg, 
-                            labels = c("A", "B"), 
+                            labels = c("a", "b"), 
                             rel_widths = c(1, 1, 0.3),
                             label_size = lg_txt,
                             nrow = 1)

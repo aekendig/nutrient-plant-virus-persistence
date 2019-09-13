@@ -218,12 +218,12 @@ plots <- align_plots(plotA, plotB + theme(legend.position = "none"), plotC, plot
 
 # combine top row
 top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
-                              labels = c("A", "B"), 
+                              labels = c("a", "b"), 
                               label_size = lg_txt, 
                               nrow = 1)
 # combine bottom row
 bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB, 
-                                 labels = c("C", "D"), 
+                                 labels = c("c", "d"), 
                                  label_size = lg_txt, 
                                  rel_widths = c(1, 1, 0.3),
                                  nrow = 1,

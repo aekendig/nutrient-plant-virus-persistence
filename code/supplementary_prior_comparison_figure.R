@@ -534,31 +534,31 @@ ileg <- get_legend(pcri)
 
 # combine
 plot1 <- cowplot::plot_grid(pcpu, pcpi + theme(legend.position = "none"), nleg, 
-                  labels = c("A", "B"), 
+                  labels = c("a", "b"), 
                   nrow = 1,
                   label_size = lg_txt, 
                   rel_widths = c(1, 1, 0.3),
                   label_x = c(0, -0.03))
 
 plot2 <- cowplot::plot_grid(pcru, pcri + theme(legend.position = "none"), ileg,
-                            labels = c("C", "D"), 
+                            labels = c("c", "d"), 
                             nrow = 1,
                             label_size = lg_txt, 
                             rel_widths = c(1, 1, 0.3),
                             label_x = c(0, -0.03))
 
 plot3 <- cowplot::plot_grid(ptpu, ptpi, 
-                  labels = c("E", "F"), 
+                  labels = c("e", "f"), 
                   nrow = 1,
                   label_size = lg_txt, 
                   rel_heights = c(0.76, 0.76),
-                  label_x = c(0, -0.03))
+                  label_x = c(0, -0.01))
 
 plot4 <- cowplot::plot_grid(ptru, ptri, 
-                            labels = c("G", "H"), 
+                            labels = c("g", "h"), 
                             nrow = 1,
                             label_size = lg_txt, 
-                            label_x = c(0, -0.03))
+                            label_x = c(0, -0.01))
 
 plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, ncol = 1)
 

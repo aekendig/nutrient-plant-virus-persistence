@@ -215,14 +215,14 @@ legD <- get_legend(plotD)
 
 # combine
 top_row <- cowplot::plot_grid(plotA, plotB + theme(legend.position = "none"), legB, 
-                  labels = c("A", "B"), 
+                  labels = c("a", "b"), 
                   nrow = 1,
                   label_size = lg_txt, 
                   rel_widths = c(1, 1, 0.3),
                   label_x = c(0, -0.03))
 
 bottom_row <- cowplot::plot_grid(plotC, plotD + theme(legend.position = "none"), legD, 
-                              labels = c("C", "D"), 
+                              labels = c("c", "d"), 
                               nrow = 1,
                               label_size = lg_txt, 
                               rel_widths = c(1, 1, 0.3),
