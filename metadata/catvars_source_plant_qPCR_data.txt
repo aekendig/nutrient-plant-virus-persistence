@@ -14,7 +14,6 @@ reporter	VIC	probe reporter for RPV
 quencher	NFQ-MGB	used for all probes
 auto_threshold	TRUE	automatic threhold used
 auto_baseline	TRUE	automatic baseline used
-comments	"NA"	no comments entered
 high_sd	N	no
 high_sd	Y	yes
 no_amp	N	no

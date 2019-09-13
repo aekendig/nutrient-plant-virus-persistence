@@ -11,74 +11,86 @@ library(EMLassemblyline)
 library(tidyverse)
 library(knitr)
 
+
+#### fill blank spaces in qPCR raw data and save as single file ####
+
+# import all raw data files
+# setwd("./data/qPCR_raw")
+# qlist <- 
+#   list.files(pattern = "qPCR_data.csv") %>%
+#   map(~read.csv(., header = T, stringsAsFactors = F))
+# 
+# # get list of numbers
+# qnums <- list.files(pattern = "qPCR_data.csv") %>% 
+#   gsub("[^[:digit:]]", "", .)
+# setwd("../..")
+# 
+# # make cycle numeric
+# for(i in 1:length(qlist)){
+#   qlist[[i]]$cycle <- as.numeric(qlist[[i]]$cycle)
+# }
+# 
+# # convert to a tibble
+# qdat <-
+#   bind_rows(qlist, .id = "q_group") %>%
+#   as_tibble
+# 
+# # make q_group match file names
+# qgroups = tibble(qnums = qnums, 
+#                  q_group = unique(qdat$q_group))
+# qdat2 <- qdat %>%
+#   full_join(qgroups) %>%
+#   select(-q_group) %>%
+#   rename(q_group = qnums)
+
+# export raw data files
+# for(i in 1:44){
+#   qname = paste("./temporary/group_", qnums[i], "_qPCR_data.csv", sep = "")
+#   write.csv(qlist[[i]], qname, row.names = F)
+# }
+# manually moved to data folder after checking output
+
+# export completed data file
+# write_csv(qdat2, "./data/source_plant_qPCR_data.csv")
+
+#### import templates ####
+
 # list of data files
 dlist <- list.files(path = "./data",
                     pattern = ".csv")
 
-
-#### import templates ####
-
 # high level text files
-template_core_metadata(path = "./metadata",
-                       license = "CCBY")
-
-# one for each data table
-template_table_attributes(path = "./metadata",
-                          data.path = "./data",
-                          data.table = dlist)
-
-# categorical values
-template_categorical_variables(path = "./metadata",
-                               data.path = "./data")
-
-# look at units
-view_unit_dictionary()
-
-
-#### qPCR data templates ####
-
-# manually edited one template
-# put quotes are NA's to maintain them and leave the other cells blank
-# don't use # symbol
-
-# import templates
-qAttTemp <- read.table("./metadata/attributes_group_xx_qPCR_data.txt", sep = "\t", quote = "\"", header = T, fill = T)
-qCatTemp <- read.table("./metadata/catvars_group_xx_qPCR_data.txt", sep = "\t", quote = "\"", header = T, fill = T)
-
-# capture qPCR groups
-qGroups <- list.files(path = "./data",
-                      pattern = "qPCR_data.csv") %>% 
-  gsub("[^[:digit:]]", "", .)
-
-# re-write templates for each group
-for(i in 1:length(qGroups)){
-  attName = paste("./metadata/attributes_group_", qGroups[i], "_qPCR_data.txt", sep = "")
-  catName = paste("./metadata/catvars_group_", qGroups[i], "_qPCR_data.txt", sep = "")
-  
-  write.table(qAttTemp, attName, row.names = F, quote = F, sep = "\t", na = "")
-  write.table(qCatTemp, catName, row.names = F, quote = F, sep = "\t", na = "")
-}
+# template_core_metadata(path = "./metadata",
+#                        license = "CCBY")
+# 
+# # one for each data table
+# template_table_attributes(path = "./metadata",
+#                           data.path = "./data",
+#                           data.table = dlist)
+# 
+# # categorical values
+# template_categorical_variables(path = "./metadata",
+#                                data.path = "./data")
+# 
+# # look at units
+# view_unit_dictionary()
 
 
 #### data file descriptors ####
 
-# write same descriptor for each qPCR file
+dlist
+
 ddlist <- NA
 
-# loop through qPCR files
-for(i in 1:length(qGroups)){
-  ddlist[i] <- paste("group", qGroups[i], "qPCR data for source plants")
-}
-
-# add individual datasets
-ddlist[45] <- "comments about controls and standards for each qPCR group"
-ddlist[46] <- "sample experiment molecular data - includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants"
-ddlist[47] <- "chlorophyll measurements for source plants"
-ddlist[48] <- "experimental treatments and molecular analysis information for receiving plants in transmission trials"
+ddlist[1] <- "comments about controls and standards for each qPCR group"
+ddlist[2] <- "sample experiment molecular data - includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants"
+ddlist[3] <- "chlorophyll measurements for source plants"
+ddlist[4] <- "qPCR data for source plants"
+ddlist[5] <- "experimental treatments and molecular analysis information for receiving plants in transmission trials"
 
 # print table
-dtable <- data.frame(data = dlist, description = ddlist)
-kable(dtable)
+# dtable <- data.frame(data = dlist, description = ddlist)
+# kable(dtable)
 
 
 #### code descriptors ####
@@ -87,18 +99,20 @@ kable(dtable)
 clist <- list.files(path = "./code",
                     pattern = ".R")
 
+# remove the eml codes
+clist <- clist[-5]
+
 # code descripions
 cdlist <- c(
   "code to create figure of correlation between PAV and RPV in coinfection",
   "code to analyze density of viruses within source plants",
   "code to create figure of treatment effects on virus density",
   "code to to create figure of the relationship between virus density and transmission",
-  "code to create metadata",
   "code to analyze infection status of source plants",
-  "code to create figure of treatment effects on infection status",
   "code to derive priors for virus density analysis",
   "code to derive priors for transmission analysis",
   "code to process raw qPCR data files",
+  "code to create supplementary figure of treatment effects on infection status",
   "code to create supplementary figure of comparison between models with and without priors",
   "code to create supplementary figure of comparison between models with full and truncated datasets",
   "code to analyze transmission",
@@ -112,15 +126,28 @@ kable(ctable)
 
 #### make eml ####
 
+# manually synced files between Github repository and nutrients_plant_viruses_edi (shift+z) on Google Drive
+
 make_eml(path = "./metadata",
-         data.path = "./data",
+         data.path = "../nutrients_plant_viruses_edi",
          dataset.title = "Soil nitrogen and phosphorus effects on plant virus density, transmission, and species interactions",
          data.table = dlist,
          data.table.description = ddlist,
          data.table.quote.character = rep("\"", length(dlist)),
+         other.entity = clist,
+         other.entity.description = cdlist,
          temporal.coverage = c("2014-02-10", "2014-08-01"),
          geographic.description = "St. Paul, MN, USA",
          geographic.coordinates = NA,
          maintenance.description = "completed", 
+         user.id = "aekendig",
          user.domain = "EDI",
-         package.id = "edi.1.1")
+         package.id = "edi.411.1")
+
+
+#### check warnings ####
+
+eml <- EML::read_eml("./metadata/edi.411.1.xml")
+EML::eml_validate(eml)
+
+

@@ -1,17 +1,17 @@
 attributeName	attributeDefinition	class	unit	dateTimeFormatString	missingValueCode	missingValueCodeExplanation
-round	"Experimental block (5, separated by time)"	numeric	dimensionless		NA	
-time	Time that plants were harvested (sequence 1 - 8)	numeric	dimensionless		NA	
-inoc	Inoculation treatment	categorical			NA	
-nutrient	Nutrient treatment of source plant	categorical			NA	
-replicate	Treatment by time replicate	numeric	dimensionless		NA	
-nutrient_t	Nutrient treatment or receiving plant	categorical			NA	
-ext_date_t	Date the receiving plan tsample was extracted (extraction group number used when date was unknown)	Date		MM/DD/YY	NA	
-RT_date_t	Date reverse transcription was performed on the receiving plant sample	Date		MM/DD/YY	NA	
-PCR_date_t	Date PCR was performed on the receiving plant sample	Date		MM/DD/YY	NA	
-gel_date_t	Date gel electrophoresis was performed on the receiving plant sample	Date		MM/DD/YY	NA	
-PAV_t	"Visibility of gel electrophoresis band for PAV for the sample (0 = not visible; 0.5 = visible, but very weak compared to the control; 1 = clearly visible)"	numeric	dimensionless		NA	
-RPV_t	"Visibility of gel electrophoresis band for RPV for the sample (0 = not visible; 0.5 = visible, but very weak compared to the control; 1 = clearly visible)"	numeric	dimensionless		NA	
-notes_t	Notes from experimental set-up and harvesting	character			NA	
-ext_notes_t	Notes about the extraction	character			NA	
-gel_notes_t	Notes about the gel electrophoresis	character			NA	
-material	Plant material used for molecular analysis	character			NA	
+round	"Experimental block (5, separated by time)"	numeric	dimensionless		NA	not applicable
+time	Time that plants were harvested (sequence 1 - 8)	numeric	dimensionless		NA	not applicable
+inoc	Inoculation treatment	categorical			NA	not applicable
+nutrient	Nutrient treatment of source plant	categorical			NA	not applicable
+replicate	Treatment by time replicate	numeric	dimensionless		NA	not applicable
+nutrient_t	Nutrient treatment or receiving plant	categorical			NA	not applicable
+ext_date_t	Date the receiving plan tsample was extracted (extraction group number used when date was unknown)	Date		MM/DD/YY	NA	not applicable
+RT_date_t	Date reverse transcription was performed on the receiving plant sample	Date		MM/DD/YY	NA	not applicable
+PCR_date_t	Date PCR was performed on the receiving plant sample	Date		MM/DD/YY	NA	not applicable
+gel_date_t	Date gel electrophoresis was performed on the receiving plant sample	Date		MM/DD/YY	NA	not applicable
+PAV_t	"Visibility of gel electrophoresis band for PAV for the sample (0 = not visible; 0.5 = visible, but very weak compared to the control; 1 = clearly visible)"	numeric	dimensionless		NA	not applicable
+RPV_t	"Visibility of gel electrophoresis band for RPV for the sample (0 = not visible; 0.5 = visible, but very weak compared to the control; 1 = clearly visible)"	numeric	dimensionless		NA	not applicable
+notes_t	Notes from experimental set-up and harvesting	character			NA	not applicable
+ext_notes_t	Notes about the extraction	character			NA	not applicable
+gel_notes_t	Notes about the gel electrophoresis	character			NA	not applicable
+material	Plant material used for molecular analysis	character			NA	not applicable

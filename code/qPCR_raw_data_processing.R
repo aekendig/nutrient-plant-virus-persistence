@@ -9,37 +9,20 @@ rm(list=ls())
 # load packages
 library(tidyverse) # version used: 1.2.1
 
-# set working directory
-setwd("./data")
-
-# import all raw data files
-qlist <- 
-  list.files(pattern = "qPCR_data.csv") %>%
-  map(~read.csv(., header = T, stringsAsFactors = F))
+# import qPCR data
+qdat <- read_csv("./data/source_plant_qPCR_data.csv")
 #str(qlist)
 
 # import experiment and molecular data
-emdat <- read.csv("sample_exp_molc_data.csv", header = T, stringsAsFactors = F) %>%
+emdat <- read.csv("./data/sample_exp_molc_data.csv", header = T, stringsAsFactors = F) %>%
   as_tibble()
 
 
 #### edit full dataset ####
 
-# make cycle numeric
-for(i in 1:length(qlist)){
-  qlist[[i]]$cycle <- as.numeric(qlist[[i]]$cycle)
-}
-
-# give each qPCR run an ID
-names(qlist) <-
-  list.files(pattern = "qPCR_data.csv") %>% 
-  gsub("[^[:digit:]]", "", .)
-
-# convert to a tibble
-qdat <-
-  bind_rows(qlist, .id = "q_group") %>%
-  as_tibble %>%
-  select(-c(cycle_mean, cycle_sd, quantity_mean, quantity_sd, comments, high_sd, no_amp, outlier_rg, exp_fail)) # remove summarizing columns
+# remove summarizing column
+qdat <- qdat %>%
+  select(-c(cycle_mean, cycle_sd, quantity_mean, quantity_sd, comments, high_sd, no_amp, outlier_rg, exp_fail))
 
 # make an inoculation treatment column
 unique(qdat$sample)
@@ -452,6 +435,3 @@ dat <- samp %>%
   mutate(round = as.numeric(round),
          time = as.numeric(time)) %>%
   left_join(emdat)
-
-# set working directory
-setwd("..")

@@ -1,5 +1,5 @@
 attributeName	attributeDefinition	class	unit	dateTimeFormatString	missingValueCode	missingValueCodeExplanation
-group	qPCR group number	numeric	dimensionless		NA	
-negative_controls	notes regarding detection of negative controls	character			NA	
-PAV_standards	notes regarding PAV standards	character			NA	
-RPV_standards	notes regarding RPV standards	character			NA	
+group	qPCR group number	numeric	dimensionless		NA	not applicable
+negative_controls	notes regarding detection of negative controls	character			NA	not applicable
+PAV_standards	notes regarding PAV standards	character			NA	not applicable
+RPV_standards	notes regarding RPV standards	character			NA	not applicable
