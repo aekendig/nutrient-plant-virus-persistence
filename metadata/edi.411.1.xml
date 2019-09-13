@@ -125,6 +125,12 @@
     <coverage>
       <geographicCoverage>
         <geographicDescription>St. Paul, MN, USA</geographicDescription>
+        <boundingCoordinates>
+          <westBoundingCoordinate>-93.18</westBoundingCoordinate>
+          <eastBoundingCoordinate>-93.18</eastBoundingCoordinate>
+          <northBoundingCoordinate>44.98</northBoundingCoordinate>
+          <southBoundingCoordinate>44.98</southBoundingCoordinate>
+        </boundingCoordinates>
       </geographicCoverage>
       <temporalCoverage>
         <rangeOfDates>

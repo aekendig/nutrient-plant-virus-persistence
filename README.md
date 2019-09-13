@@ -5,7 +5,7 @@
 ### Contents
 - code: descriptions below
 - output: outputs of R scripts that are used as inputs to other R scripts (also in code directory) or as figures in manuscript
-- data: descriptions below (will be made publicly available on https://portal.edirepository.org)
+- data: descriptions below (publicly available: https://doi.org/10.6073/pasta/01e7bf593676a942f262623710acba13)
 - metadata: EML-formatted metadata for each data file, see methods.txt for details on data collection
 
 |code                                     |desription                                                                                        |
@@ -31,3 +31,9 @@
 |source_plant_chlorophyll_data.csv |chlorophyll measurements for source plants                                                                                                                      |
 |source_plant_qPCR_data.csv        |qPCR data for source plants                                                                                                                                     |
 |transmission_data.csv             |experimental treatments and molecular analysis information for receiving plants in transmission trials                                                          |
+
+## Citation
+Kendig A. E., E. T. Borer, E. N. Boak, T. C. Picard, E. W. Seabloom. 2019. Soil nitrogen and phosphorus effects on plant virus density, transmission, and species interactions. Environmental Data Initiative. https://doi.org/10.6073/pasta/01e7bf593676a942f262623710acba13. Dataset accessed 9/13/2019.
+
+## License
+see https://doi.org/10.6073/pasta/01e7bf593676a942f262623710acba13 
