@@ -3,17 +3,19 @@
 
 #### set up ####
 
-# import data
+# source data
 source("./code/qPCR_raw_data_processing.R") # clears environment and loads tidyverse
-sdat <- read_csv("./data/sample_exp_molc_data.csv")
+
+# clear all except dataset
+rm(list = setdiff(ls(), c("dat")))
 
 # load libraries
 library(brms) # version used: 2.7.0
 library(tidybayes) # version used: 1.0.4
 library(bayesplot) # version used: 1.6.0
 
-# clear all except dataset
-rm(list = setdiff(ls(), c("dat")))
+# import data
+sdat <- read_csv("./data/sample_exp_molc_data.csv")
 
 # load models for priors
 # load("./output/lacroix_output/lacroix_concentration_n_pav.rda")
@@ -30,7 +32,7 @@ dpi <- tibble(
   dpi = c(5, 8, 12, 16, 19, 22, 26, 29)
 )
 
-# sample size in experiments
+# sample size in experiments (part of Table S2)
 dat %>%
   filter(material == "shoot" & inoc != "healthy") %>%
   select(target, nutrient, inoc, round, time, replicate) %>%
@@ -56,7 +58,7 @@ dat <- dat %>%
   full_join(dpi)
 
 
-#### examine distribution ####
+#### examine distribution and edit data ####
 
 # histogram of values
 dat %>%
@@ -253,6 +255,7 @@ dat2 %>%
 #### format data for models ####
 
 # edit data
+# remove values that are too low to use
 d.at <- dat2 %>%
   filter(quant_zero == 0 &
            inoc %in% c("PAV", "coinfection", "RPV")) %>%
@@ -284,31 +287,36 @@ sdat2 <- sdat %>%
   filter(material == "shoot") %>%
   select(round, time, inoc, nutrient, replicate, RTPCR_PAV, RTPCR_RPV)
 
-# incindental inoculations
-d.at %>%
+# accidental inoculations
+(acc.r <- d.at %>%
   left_join(sdat2) %>%
-  filter(inoc == "PAV" & ((target == "RPV" & quant_zero == 0) | RTPCR_RPV == 1)) %>%
-  select(round, time, inoc, nutrient, replicate) %>%
-  unique() %>%
-  group_by(inoc, nutrient) %>%
-  summarise(reps = n())
+  filter(inoc == "PAV" & (target == "RPV" | RTPCR_RPV == 1)) %>%
+  select(sample, round, time, inoc, nutrient, replicate, quant_zero, conc, RTPCR_RPV))
 
 d.at %>%
+  filter(sample %in% acc.r$sample) %>%
+  select(sample, nutrient, target, inoc, quant_zero, conc)
+# 5 samples will be removed
+# one has no PAV value anyway (probably too low)
+
+(acc.p <- d.at %>%
   left_join(sdat2) %>%
-  filter(inoc == "RPV" & ((target == "PAV" & quant_zero == 0) | RTPCR_PAV == 1)) %>%
-  select(round, time, inoc, nutrient, replicate) %>%
-  unique() %>%
-  group_by(inoc, nutrient) %>%
-  summarise(reps = n())
+  filter(inoc == "RPV" & (target == "PAV" | RTPCR_PAV == 1)) %>%
+  select(sample, round, time, inoc, nutrient, replicate, quant_zero, conc, RTPCR_PAV)) 
+
+d.at %>%
+  filter(sample %in% acc.p$sample) %>%
+  select(sample, nutrient, target, inoc, quant_zero, conc)
+# 7 samples will be removed
 
 # data by virus
 d.at.p <- d.at %>%
-  filter(target == "PAV" & inoc != "RPV") 
+  filter(target == "PAV" & inoc != "RPV" & !(sample %in% acc.r$sample)) 
 
 d.at.r <- d.at %>%
-  filter(target == "RPV" & inoc != "PAV")
+  filter(target == "RPV" & inoc != "PAV" & !(sample %in% acc.p$sample))
 
-# sample sizes
+# sample sizes (Table S2)
 d.at.p %>%
   group_by(inoc, nutrient) %>%
   summarise(reps = n())

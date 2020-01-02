@@ -23,6 +23,20 @@ dat2 <- dat %>%
   mutate(co = ifelse(inoc == "coinfection", 1, 0),
          present = ifelse(quant_zero == 1, 0, 1))
 
+# check for same sample in multiple qPCR groups
+dups <-dat2 %>%
+  group_by(target, sample) %>%
+  mutate(dup = duplicated(sample)) %>%
+  filter(dup == T) %>%
+  select(sample, target) %>%
+  ungroup()
+
+dups %>%
+  left_join(dat2) %>%
+  select(sample, target, quant_adj) %>%
+  data.frame() 
+#### start here by fixing duplicates ####
+
 # data by virus
 datp <- dat2 %>%
   filter(target == "PAV" & inoc != "RPV") 
