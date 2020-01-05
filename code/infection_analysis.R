@@ -13,11 +13,13 @@ library(bayesplot) # version used: 1.6.0
 
 # import data
 dat <- read_csv("./output/concentration_analysis_all_data.csv")
+# samples with uncertainty about presence/absence have been removed (remove == 1 from qPCR_raw_data_processing)
+# samples above the standard curve are excluded
+# the only difference between this and the concentration dataset is that it includes values that are effectively 0
 
 
 #### edit data ####
 
-# filter for inoculated values, add coinfection column, add presence column
 dat2 <- dat %>%
   filter(inoc %in% c("PAV", "coinfection", "RPV")) %>%
   mutate(co = ifelse(inoc == "coinfection", 1, 0),
@@ -28,14 +30,19 @@ dups <-dat2 %>%
   group_by(target, sample) %>%
   mutate(dup = duplicated(sample)) %>%
   filter(dup == T) %>%
-  select(sample, target) %>%
+  select(sample, target, dup) %>%
   ungroup()
 
 dups %>%
   left_join(dat2) %>%
   select(sample, target, quant_adj) %>%
   data.frame() 
-#### start here by fixing duplicates ####
+# 22 duplicates, 44 samples
+
+# remove duplicates and qPCR-specific info
+dat3 <- dat2 %>%
+  select(target:mass_ext_mg, quant_adj, co, present) %>%
+  distinct(sample, target, keep_all = F)
 
 # data by virus
 datp <- dat2 %>%

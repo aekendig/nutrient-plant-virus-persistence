@@ -265,15 +265,17 @@ dev.off()
 #### numbers for text ####
 
 # model summaries
-summary(m.li.r)
 summary(m.li.p)
+summary(m.li.r)
 
 # mean values in proportion change
+slopep %>%
+  group_by(treatment, Inoculation, Nutrient) %>%
+  mean_hdi()
+
 sloper %>%
   group_by(treatment, Inoculation, Nutrient) %>%
   mean_hdi()
 
-slopep %>%
-  group_by(treatment, Inoculation, Nutrient) %>%
-  mean_hdi()
+
 

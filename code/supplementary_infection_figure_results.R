@@ -103,6 +103,37 @@ avgr <- combr %>%
          Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P"))) %>%
   as_tibble()
 
+# percentage change due to coinfection across all nutrient combinations
+percp <- combp %>% 
+  transmute(high_N = n - low,
+            high_P = p - low,
+            high_NP = b - low,
+            low_co = coinf - low,
+            N_co = n_co - n,
+            P_co = p_co - p,
+            NP_co = b_co - b) %>%
+  gather(key = "treatment", value = "effect") %>%
+  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
+         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
+         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
+         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
+percr <- combr %>% 
+  transmute(high_N = n - low,
+            high_P = p - low,
+            high_NP = b - low,
+            low_co = coinf - low,
+            N_co = n_co - n,
+            P_co = p_co - p,
+            NP_co = b_co - b) %>%
+  gather(key = "treatment", value = "effect") %>%
+  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
+         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
+         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
+         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
 
 #### raw data figures ####
 
@@ -237,3 +268,15 @@ plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 pdf("./output/figure_S2_infection.pdf", width = 6, height = 4)
 plot
 dev.off()
+
+
+#### numbers for text ####
+
+# mean values in proportion change
+percp %>%
+  group_by(treatment, Inoculation, Nutrient) %>%
+  mean_hdi()
+
+percr %>%
+  group_by(treatment, Inoculation, Nutrient) %>%
+  mean_hdi()

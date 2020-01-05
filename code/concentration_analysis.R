@@ -40,14 +40,14 @@ dat %>%
   group_by(target, nutrient, inoc) %>%
   summarise(reps = n()) %>%
   data.frame()
-  
+
 # remove samples:
 # poor standard curve efficiency
 # quantities below standard curve, but greater than 1e3 (not sure if these should be zeros or not; standards removed if contamination had higher concentration)
 # multiple qPCR tests of the same sample and the sample wasn't detected in one or had the higher variance in detected in multiple
 # specific cases: low volume, known contamination, mis-labelling
 # make values below the standard curve 0 (will be removed in this analysis)
-dat <- dat %>%
+dat2 <- dat %>%
   filter(remove == 0 & material == "shoot") %>%
   mutate(quant_adj = case_when(target == "PAV" & quant_adj < PAVmin ~ 0,
                                target == "RPV" & quant_adj < RPVmin ~ 0,
@@ -61,27 +61,27 @@ dat <- dat %>%
 #### examine distribution and edit data ####
 
 # histogram of values
-dat %>%
+dat2 %>%
   ggplot() +
   geom_histogram(aes(x = quant_adj, fill = quant_zero)) 
 
 # one value is very high
-filter(dat, quant_adj > 1e10) %>% data.frame() # a PAV value much higher than max
+filter(dat2, quant_adj > 1e10) %>% data.frame() # a PAV value much higher than max
 
 # look at all values above max
-filter(dat, (target == "RPV" & quant_adj > RPVmax) | (target == "PAV" & quant_adj > PAVmax)) # only 3, remove these too
+filter(dat2, (target == "RPV" & quant_adj > RPVmax) | (target == "PAV" & quant_adj > PAVmax)) # only 3, remove these too
 
 # remove values above standard curve
-dat <- dat %>%
+dat3 <- dat2 %>%
   filter((target == "RPV" & quant_adj <= RPVmax) | (target == "PAV" & quant_adj <= PAVmax))
 
 # re-do histogram
-dat %>%
+dat3 %>%
   ggplot() +
   geom_histogram(aes(x = quant_adj, fill = quant_zero))
 
 # log-tranformed values
-dat %>%
+dat3 %>%
   filter(quant_zero == 0) %>%
   ggplot() +
   geom_histogram(aes(x = log(quant_adj)))
@@ -90,14 +90,14 @@ dat %>%
 #### visualize sources of variation ####
 
 # look at qPCR wells
-dat %>%
+dat3 %>%
   ggplot(aes(x = well, y = cycle, colour = target)) +
   geom_point(alpha = 0.5) +
   stat_summary(fun.data = "mean_cl_boot")
 # not a strong trend due to wells and the ones that stick out have fewer replicates
 
 # look at PAV and RPV concentrations in same well
-wcdat <- dat %>%
+wcdat <- dat3 %>%
   select(q_group, well, target, cycle) %>%
   spread(target, cycle) %>%
   group_by(well) %>%
@@ -115,7 +115,7 @@ cor.test(wcdat$mRPV, wcdat$mPAV)
 # not a strong correlation - well does not seem to affect concentration
 
 # correlation between well's distance from mean and number of reps
-dat %>%
+dat3 %>%
   mutate(mean_cycle = mean(cycle, na.rm = T)) %>%
   group_by(well, target, mean_cycle) %>%
   summarise(well_mean = mean(cycle, na.rm = T),
@@ -126,7 +126,7 @@ dat %>%
 # all are within about 5 cycles of the mean and those outside have very low replication
 
 # look at standard deviation among technical replicates
-dat %>%
+dat3 %>%
   filter(inoc != "healthy") %>%
   group_by(q_group, target, dpi, inoc, nutrient, sample) %>%
   summarise(tech_sd = sd(cycle, na.rm = T),
@@ -137,7 +137,7 @@ dat %>%
 # all without zero's are less than 3 and there isn't a strong relationship to experimental treatment
 
 # look at mean and standard deviation of technical replicates without zero's
-dat %>%
+dat3 %>%
   filter(quant_zero == 0 & inoc != "healthy") %>%
   group_by(q_group, target, dpi, inoc, nutrient, sample) %>%
   summarise(tech_sd = sd(cycle),
@@ -147,7 +147,7 @@ dat %>%
 # higher sd samples generally have higher mean values
 
 # look at experimental rounds
-dat %>%
+dat3 %>%
   ggplot(aes(x = round, y = cycle, colour = as.factor(replicate))) +
   geom_point(alpha = 0.5) +
   stat_summary(fun.data = "mean_cl_boot", size = 1.5, position = position_dodge(0.3)) +
@@ -155,14 +155,14 @@ dat %>%
 # rounds are pretty similar, replicates within rounds are not necessarily more similar than across rounds (except 6 and 7 for RPV)
 
 # look at rounds by treatment
-dat %>%
+dat3 %>%
   ggplot(aes(x = round, y = cycle, colour = as.factor(replicate))) +
   stat_summary(fun.data = "mean_cl_boot", position = position_dodge(0.3), alpha = 0.7) +
   geom_point(alpha = 0.3) +
   facet_grid(nutrient~target)
 
 # look at round by day
-dat %>%
+dat3 %>%
   ggplot(aes(x = round, y = cycle, colour = as.factor(replicate))) +
   stat_summary(fun.data = "mean_cl_boot", position = position_dodge(0.3), alpha = 0.7) +
   geom_point(alpha = 0.3) +
@@ -172,7 +172,7 @@ dat %>%
 
 #### average technical replicates ####
 
-dat2 <- dat %>%
+dat4 <- dat3 %>%
   group_by(target, dpi, time, inoc, high_N, high_P, nutrient, round, replicate, sample, shoot_mass_g, root_mass_g, leaf_area_mm2, leaves, mass_ext_mg, PAVmin, PAVint, PAVslope, RPVmin, RPVint, RPVslope, q_group) %>%
   summarise(tech_cycle = mean(cycle, na.rm = T)) %>%
   mutate(quant = case_when(
@@ -187,7 +187,7 @@ dat2 <- dat %>%
   ungroup()
 
 # check for same sample in multiple qPCR groups
-dups <-dat2 %>%
+dups <-dat4 %>%
   group_by(target, sample) %>%
   mutate(dup = duplicated(sample)) %>%
   filter(dup == T) %>%
@@ -195,7 +195,7 @@ dups <-dat2 %>%
   ungroup()
 
 dups %>%
-  left_join(dat2) %>%
+  left_join(dat4) %>%
   select(sample, target, quant_adj) %>%
   data.frame() 
 # all are zero's - combine samples if needed
@@ -204,31 +204,31 @@ dups %>%
 #### visualize treatment effects ####
 
 # look at mean values
-dat2 %>%
+dat4 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_se") +
-  stat_summary(data = filter(dat, quant_zero == 0), fun.data = "mean_se", geom = "line") +
-  geom_point(data = filter(dat, quant_zero == 1), color = "blue", alpha = 0.5) + 
+  stat_summary(data = filter(dat4, quant_zero == 0), fun.data = "mean_se") +
+  stat_summary(data = filter(dat4, quant_zero == 0), fun.data = "mean_se", geom = "line") +
+  geom_point(data = filter(dat4, quant_zero == 1), color = "blue", alpha = 0.5) + 
   facet_grid(target ~ inoc, scales = "free") # PAV growth is delayed by coinfection, RPV is enhanced (but more variable)
 
 # look at mean values by nutrient - PAV
-dat2 %>%
+dat4 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_se") +
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV"), fun.data = "mean_se", geom = "line") +
-  geom_point(data = filter(dat, quant_zero == 1 & target == "PAV"), color = "blue", alpha = 0.5) + 
+  stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV"), fun.data = "mean_se") +
+  stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV"), fun.data = "mean_se", geom = "line") +
+  geom_point(data = filter(dat4, quant_zero == 1 & target == "PAV"), color = "blue", alpha = 0.5) + 
   facet_grid(inoc ~ nutrient, scales = "free") # the peak in coinfection is driven by low nutrients, but it is driven by N when PAV is alone
 
 # look at PAV in coinfection
-dat2 %>%
+dat4 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se") +
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se", geom = "line") +
-  geom_point(data = filter(dat, quant_zero == 1 & target == "PAV" & inoc == "coinfection"), color = "blue", alpha = 0.5) + 
+  stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se") +
+  stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se", geom = "line") +
+  geom_point(data = filter(dat4, quant_zero == 1 & target == "PAV" & inoc == "coinfection"), color = "blue", alpha = 0.5) + 
   facet_wrap(~nutrient, nrow = 2, scales = "free") # peaks in the middle with high nutrients (like in single infection), especially P, peaks later with lower
 
 # look at mean values by nutrient - log-transformed PAV
-dat2 %>%
+dat4 %>%
   filter(quant_zero == 0 & target == "PAV" & !(inoc %in% c("healthy", "RPV"))) %>%
   ggplot(aes(x = dpi, y = log(quant_adj))) + 
   stat_summary(fun.data = "mean_se") +
@@ -236,15 +236,15 @@ dat2 %>%
   facet_grid(inoc ~ nutrient, scales = "free")
 
 # look at mean values by nutrient - RPV
-dat2 %>%
+dat4 %>%
   ggplot(aes(x = dpi, y = quant_adj)) + 
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_se") +
-  stat_summary(data = filter(dat, quant_zero == 0 & target == "RPV"), fun.data = "mean_se", geom = "line") +
-  geom_point(data = filter(dat, quant_zero == 1 & target == "RPV"), color = "blue", alpha = 0.5) + 
+  stat_summary(data = filter(dat4, quant_zero == 0 & target == "RPV"), fun.data = "mean_se") +
+  stat_summary(data = filter(dat4, quant_zero == 0 & target == "RPV"), fun.data = "mean_se", geom = "line") +
+  geom_point(data = filter(dat4, quant_zero == 1 & target == "RPV"), color = "blue", alpha = 0.5) + 
   facet_grid(inoc ~ nutrient, scales = "free") # it looks like there are multiple peaks in the temporal dynamics and they occur at different times depending on the nutrient and inoculation treatment, highest peaks with P addition
 
 # look at mean values by nutrient - log-transformed RPV
-dat2 %>%
+dat4 %>%
   filter(quant_zero == 0 & target == "RPV" & !(inoc %in% c("healthy", "PAV"))) %>%
   ggplot(aes(x = dpi, y = log(quant_adj))) + 
   stat_summary(fun.data = "mean_se") +
@@ -256,7 +256,7 @@ dat2 %>%
 
 # edit data
 # remove values that are too low to use
-d.at <- dat2 %>%
+d.at <- dat4 %>%
   filter(quant_zero == 0 &
            inoc %in% c("PAV", "coinfection", "RPV")) %>%
   mutate(co = ifelse(inoc == "coinfection", 1, 0),
@@ -287,7 +287,7 @@ sdat2 <- sdat %>%
   filter(material == "shoot") %>%
   select(round, time, inoc, nutrient, replicate, RTPCR_PAV, RTPCR_RPV)
 
-# accidental inoculations
+# accidental RPV inoculations
 (acc.r <- d.at %>%
   left_join(sdat2) %>%
   filter(inoc == "PAV" & (target == "RPV" | RTPCR_RPV == 1)) %>%
@@ -299,6 +299,7 @@ d.at %>%
 # 5 samples will be removed
 # one has no PAV value anyway (probably too low)
 
+# accidental PAV inoculations  
 (acc.p <- d.at %>%
   left_join(sdat2) %>%
   filter(inoc == "RPV" & (target == "PAV" | RTPCR_PAV == 1)) %>%
@@ -308,6 +309,20 @@ d.at %>%
   filter(sample %in% acc.p$sample) %>%
   select(sample, nutrient, target, inoc, quant_zero, conc)
 # 7 samples will be removed
+
+# accidental inoculations from all samples (Table S2)
+dat2 %>%
+  group_by(target, dpi, time, inoc, nutrient, round, replicate, sample, PAVmin, PAVint, PAVslope, RPVmin, RPVint, RPVslope, q_group, RTPCR_PAV, RTPCR_RPV) %>%
+  summarise(tech_cycle = mean(cycle, na.rm = T)) %>%
+  mutate(quant = case_when(target == "PAV" ~ 10 ^ ((tech_cycle - PAVint) / PAVslope),
+                           target == "RPV" ~ 10 ^ ((tech_cycle - RPVint) / RPVslope))) %>%
+  ungroup() %>%
+  filter((inoc == "PAV" & ((target == "RPV" & quant > RPVmin) | (RTPCR_RPV == 1 & !is.na(quant))))|
+           (inoc == "RPV" & ((target == "PAV" & quant > PAVmin) | (RTPCR_PAV == 1 & !is.na(quant))))) %>%
+  select(inoc, sample, nutrient, quant, RTPCR_RPV, RTPCR_PAV) %>%
+  arrange(inoc, nutrient) %>%
+  data.frame()
+# not going to include samples that were positive for RT-PCR, but had no detectable density (NA)
 
 # data by virus
 d.at.p <- d.at %>%
@@ -531,4 +546,4 @@ pp_check(m.lid.r, nsamples = 100)
 write_csv(d.at.p, "./output/concentration_analysis_pav_data.csv")
 write_csv(d.at.r, "./output/concentration_analysis_rpv_data.csv")
 write_csv(d.at.c, "./output/concentration_analysis_coinfection_data.csv")
-write_csv(dat2, "./output/concentration_analysis_all_data.csv")
+write_csv(dat4, "./output/concentration_analysis_all_data.csv")
