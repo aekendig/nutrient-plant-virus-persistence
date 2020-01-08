@@ -471,9 +471,90 @@ aruci <- as.array(mruci) %>%
 plot_intervals(full_join(aruc, aruci)) # smaller error bars, similar mean values
 
 
+#### models for coinfected plants ####
+
+# select data
+datpco <- datp2 %>%
+  filter(co == 1)
+
+datrco <- datr2 %>%
+  filter(co == 1)
+
+# add concentration of other virus
+# standardize concentration values
+datpco2 <- datpco %>%
+  left_join(datrco %>%
+              select(dpi, nutrient, round, replicate, nutrient_t, conc) %>%
+              rename(conc_r = conc)) %>%
+  filter(!is.na(conc_r)) %>%
+  mutate(conc_s = (conc - mean(conc)) / sd(conc),
+         conc_r_s = (conc_r - mean(conc_r)) / sd(conc_r)) %>%
+  select(-quant_s)
+
+nrow(datpco2) - nrow(datpco) # 15 unknowns
+
+datrco2 <- datrco %>%
+  left_join(datpco %>%
+              select(dpi, nutrient, round, replicate, nutrient_t, conc) %>%
+              rename(conc_p = conc)) %>%
+  filter(!is.na(conc_p)) %>%
+  mutate(conc_s = (conc - mean(conc)) / sd(conc),
+         conc_p_s = (conc_p - mean(conc_p)) / sd(conc_p)) %>%
+  select(-quant_s)
+
+nrow(datrco2) - nrow(datrco) # 179 unknowns
+
+# sample sizes
+datpco2 %>%
+  group_by(nutrient, nutrient_t) %>%
+  summarise(n = n()) # at least 8 in each category
+
+datrco2 %>%
+  group_by(nutrient, nutrient_t) %>%
+  summarise(n = n()) # at least 8 in each category
+
+# PAV model
+mpco <- brm(data = datpco2, family = bernoulli,
+            t_up ~ conc_s + conc_r_s + high_N * high_P + high_N_t * high_P_t + (1|round) + (1|time),
+            prior = c(prior(normal(1.53, 0.60), class = Intercept),
+                      prior(normal(-0.26, 0.28), class = b, coef = conc_s),
+                      prior(normal(0, 10), class = b, coef = conc_r_s),
+                      prior(normal(0.69, 0.94), class = b, coef = high_N),
+                      prior(normal(0.63, 1.42), class = b, coef = high_P),
+                      prior(normal(-0.20, 1.63), class = b, coef = high_N:high_P),
+                      prior(normal(0, 10), class = b, coef = high_N_t),
+                      prior(normal(0, 10), class = b, coef = high_P_t),
+                      prior(normal(0, 10), class = b, coef = high_N_t:high_P_t),
+                      prior(cauchy(0, 1), class = sd)),
+            iter = 6000, warmup = 1000, chains = 3, cores = 2,
+            control = list(adapt_delta = 0.9999))
+summary(mpco)
+save(mpco, file = "./output/transmission_coinfected_pav_up_concentration_informative.rda")
+
+# RPV model
+mrco <- brm(data = datrco2, family = bernoulli,
+            t_up ~ conc_s + conc_p_s + high_N * high_P + high_N_t * high_P_t + (1|round) + (1|time),
+            prior = c(prior(normal(0.54, 0.30), class = Intercept),
+                      prior(normal(0.19, 0.13), class = b, coef = conc_s),
+                      prior(normal(0, 10), class = b, coef = conc_p_s),
+                      prior(normal(0.62, 0.42), class = b, coef = high_N),
+                      prior(normal(0.13, 0.71), class = b, coef = high_P),
+                      prior(normal(-0.01, 0.86), class = b, coef = high_N:high_P),
+                      prior(normal(0, 10), class = b, coef = high_N_t),
+                      prior(normal(0, 10), class = b, coef = high_P_t),
+                      prior(normal(0, 10), class = b, coef = high_N_t:high_P_t),
+                      prior(cauchy(0, 1), class = sd)),
+            iter = 6000, warmup = 1000, chains = 3, cores = 2,
+            control = list(adapt_delta = 0.9999))
+summary(mrco)
+save(mrco, file = "./output/transmission_coinfected_rpv_up_concentration_informative.rda")
+
+
 #### save data for plotting ####
 
 # save file
 write_csv(datp2, "./output/transmission_analysis_pav_data.csv")
 write_csv(datr2, "./output/transmission_analysis_rpv_data.csv")
+write_csv(datpco2, "./output/transmission_analysis_coinfected_pav_data.csv")
+write_csv(datrco2, "./output/transmission_analysis_coinfected_rpv_data.csv")
 

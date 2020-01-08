@@ -231,7 +231,7 @@ bottom_row <- cowplot::plot_grid(plotC, plotD + theme(legend.position = "none"),
 plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 
 # print
-pdf("./output/figure_S3_truncated_dataset.pdf", width = 6, height = 4)
+pdf("./output/figure_S2_truncated_dataset.pdf", width = 6, height = 4)
 plot
 dev.off()
 

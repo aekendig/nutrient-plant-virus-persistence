@@ -381,7 +381,7 @@ bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB,
 plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 
 # print
-pdf("./output/figure_2_transmission.pdf", width = 6, height = 4)
+pdf("./output/figure_3_transmission.pdf", width = 6, height = 4)
 plot
 dev.off()
 
