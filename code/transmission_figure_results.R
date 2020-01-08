@@ -163,24 +163,33 @@ avgr <- combr %>%
 
 # percentage change due to coinfection across all nutrient combinations
 percp <- combp %>% 
-  transmute(l.l = l_l_co - l_l,
-            l.n = l_n_co - l_n,
-            l.p = l_p_co - l_p,
-            l.b = l_b_co - l_b,
-            n.l = n_l_co - n_l,
-            n.n = n_n_co - n_n,
-            n.p = n_p_co - n_p,
-            n.b = n_b_co - n_b,
-            p.l = p_l_co - p_l,
-            p.n = p_n_co - p_n,
-            p.p = p_p_co - p_p,
-            p.b = p_b_co - p_b,
-            b.l = b_l_co - b_l,
-            b.n = b_n_co - b_n,
-            b.p = b_p_co - b_p,
-            b.b = b_b_co - b_b) %>%
+  transmute(n.l = n_l - l_l,
+            p.l = p_l - l_l,
+            b.l = b_l - l_l,
+            l.n = l_n - l_l,
+            n.n = n_n - n_l,
+            p.n = p_n - p_l,
+            b.n = b_n - b_l,
+            l.l.co = l_l_co - l_l,
+            l.n.co = l_n_co - l_n,
+            l.p.co = l_p_co - l_p,
+            l.b.co = l_b_co - l_b,
+            n.l.co = n_l_co - n_l,
+            n.n.co = n_n_co - n_n,
+            n.p.co = n_p_co - n_p,
+            n.b.co = n_b_co - n_b,
+            p.l.co = p_l_co - p_l,
+            p.n.co = p_n_co - p_n,
+            p.p.co = p_p_co - p_p,
+            p.b.co = p_b_co - p_b,
+            b.l.co = b_l_co - b_l,
+            b.n.co = b_n_co - b_n,
+            b.p.co = b_p_co - b_p,
+            b.b.co = b_b_co - b_b) %>%
   gather(key = "treatment", value = "effect") %>%
-  mutate(Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+  mutate(Coinoculation = case_when(substr(treatment, 5, 6) == "co" ~ "co",
+                                   TRUE ~ "single"),
+         Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
                               substr(treatment, 1, 1) == "n" ~ "N",
                               substr(treatment, 1, 1) == "p" ~ "P",
                               substr(treatment, 1, 1) == "b" ~ "N+P"),
@@ -193,24 +202,33 @@ percp <- combp %>%
   as_tibble()
 
 percr <- combr %>% 
-  transmute(l.l = l_l_co - l_l,
-            l.n = l_n_co - l_n,
-            l.p = l_p_co - l_p,
-            l.b = l_b_co - l_b,
-            n.l = n_l_co - n_l,
-            n.n = n_n_co - n_n,
-            n.p = n_p_co - n_p,
-            n.b = n_b_co - n_b,
-            p.l = p_l_co - p_l,
-            p.n = p_n_co - p_n,
-            p.p = p_p_co - p_p,
-            p.b = p_b_co - p_b,
-            b.l = b_l_co - b_l,
-            b.n = b_n_co - b_n,
-            b.p = b_p_co - b_p,
-            b.b = b_b_co - b_b) %>%
+  transmute(n.l = n_l - l_l,
+            p.l = p_l - l_l,
+            b.l = b_l - l_l,
+            l.n = l_n - l_l,
+            n.n = n_n - n_l,
+            p.n = p_n - p_l,
+            b.n = b_n - b_l,
+            l.l.co = l_l_co - l_l,
+            l.n.co = l_n_co - l_n,
+            l.p.co = l_p_co - l_p,
+            l.b.co = l_b_co - l_b,
+            n.l.co = n_l_co - n_l,
+            n.n.co = n_n_co - n_n,
+            n.p.co = n_p_co - n_p,
+            n.b.co = n_b_co - n_b,
+            p.l.co = p_l_co - p_l,
+            p.n.co = p_n_co - p_n,
+            p.p.co = p_p_co - p_p,
+            p.b.co = p_b_co - p_b,
+            b.l.co = b_l_co - b_l,
+            b.n.co = b_n_co - b_n,
+            b.p.co = b_p_co - b_p,
+            b.b.co = b_b_co - b_b) %>%
   gather(key = "treatment", value = "effect") %>%
-  mutate(Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+  mutate(Coinoculation = case_when(substr(treatment, 5, 6) == "co" ~ "co",
+                                   TRUE ~ "single"),
+         Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
                               substr(treatment, 1, 1) == "n" ~ "N",
                               substr(treatment, 1, 1) == "p" ~ "P",
                               substr(treatment, 1, 1) == "b" ~ "N+P"),
@@ -273,8 +291,8 @@ plotB <- datr %>%
   scale_size_manual(values = c(0.5, 0.5), guide = F) +
   scale_colour_manual(values = col_pal,
                       name = "Source plant\nnutrient") +
-  scale_shape_manual(values = c(19, 21), name = "Inoculation") +
-  scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
+  scale_shape_manual(values = c(19, 21), name = "Source plant\ninfection") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "Source plant\ninfection") +
   ylim(0, 1.07) + 
   xlab("Days post inoculation") +
   ylab("RPV transmission")
@@ -305,7 +323,8 @@ plotC <- avgp %>%
         panel.spacing = unit(0, "lines")) +
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  xlab("Receiving plant nutrient") +
+  scale_y_continuous(breaks = c(0, 0.3, 0.6, 0.9)) +
+  xlab("Recipient plant nutrient") +
   ylab("Est. PAV transmission")
 
 plotD <- avgr %>%
@@ -331,7 +350,8 @@ plotD <- avgr %>%
         panel.spacing = unit(0, "lines")) +
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  xlab("Receiving plant nutrient") +
+  scale_y_continuous(breaks = c(0.0, 0.3, 0.6, 0.9)) +
+  xlab("Recipient plant nutrient") +
   ylab("Est. RPV transmission")
 
 
@@ -361,7 +381,7 @@ bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB,
 plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
 
 # print
-pdf("./output/figure_3_transmission.pdf", width = 6, height = 4)
+pdf("./output/figure_2_transmission.pdf", width = 6, height = 4)
 plot
 dev.off()
 
@@ -369,14 +389,16 @@ dev.off()
 #### numbers for text ####
 
 # model summaries
-summary(m.li.r)
-summary(m.li.p)
+summary(mpuci)
+summary(mruci)
 
-# mean values in proportion change
+# mean values in proportion change, comparing co-inoculated with singly-inoculated plants
 percp %>%
-  group_by(treatment, Nutrient, Nutrient_t) %>%
-  mean_hdi()
+  group_by(Coinoculation, Nutrient, Nutrient_t, treatment) %>%
+  mean_hdi() %>%
+  data.frame()
 
 percr %>%
-  group_by(treatment, Nutrient, Nutrient_t) %>%
-  mean_hdi()
+  group_by(Coinoculation, Nutrient, Nutrient_t, treatment) %>%
+  mean_hdi() %>%
+  data.frame()

@@ -38,14 +38,46 @@ datr <- datr %>%
          inoculation = fct_relevel(inoculation, "single"),
          nutrient = fct_relevel(nutrient, "low", "N", "P"))
 
+# average values by treatment
+datp_avg <- datp %>%
+  group_by(nutrient, nutrient_t, inoculation) %>%
+  summarise(conc_avg = mean(conc),
+            conc_se = sd(conc)/sqrt(length(conc)),
+            t_up_avg = mean(t_up),
+            t_up_se = sd(t_up)/sqrt(length(t_up))) %>%
+  mutate(treatment = paste(nutrient, nutrient_t, inoculation, sep = ".")) %>%
+  ungroup()
+
+datr_avg <- datr %>%
+  group_by(nutrient, nutrient_t, inoculation) %>%
+  summarise(conc_avg = mean(conc),
+            conc_se = sd(conc)/sqrt(length(conc)),
+            t_up_avg = mean(t_up),
+            t_up_se = sd(t_up)/sqrt(length(t_up))) %>%
+  mutate(treatment = paste(nutrient, nutrient_t, inoculation, sep = ".")) %>%
+  ungroup()
+
+# extreme concentration values
+datp_avg %>%
+  mutate(top = conc_avg + conc_se,
+         bottom = conc_avg - conc_se) %>%
+  summarise(min = min(bottom),
+            max = max(top))
+
+datr_avg %>%
+  mutate(top = conc_avg + conc_se,
+         bottom = conc_avg - conc_se) %>%
+  summarise(min = min(bottom),
+            max = max(top))
+
 # fitted values for concentration
-datp_pred <- datp %>%
-  select(conc, conc_s) %>%
-  mutate(co = 0,
+datp_pred <- tibble(conc = seq(0, max(datp$conc), length.out = 1000)) %>%
+  mutate(conc_s = (conc - mean(datp$conc)) / sd(datp$conc),
+         co = 0,
          high_N = 0,
          high_P = 0,
-         high_N_t = 0,
-         high_P_t = 0) 
+         high_N_t = 1,
+         high_P_t = 0)
 
 datp_pred <- datp_pred %>%
   cbind(fitted(mpuci, newdata = datp_pred, re_formula = NA, nsamples = 100)) %>%
@@ -53,13 +85,13 @@ datp_pred <- datp_pred %>%
          lower = Q2.5,
          upper = Q97.5)
 
-datr_pred <- datr %>%
-  select(conc, conc_s) %>%
-  mutate(co = 0,
+datr_pred <- tibble(conc = seq(0, max(datr$conc), length.out = 1000)) %>%
+  mutate(conc_s = (conc - mean(datr$conc)) / sd(datr$conc),
+         co = 0,
          high_N = 0,
          high_P = 0,
-         high_N_t = 0,
-         high_P_t = 0) 
+         high_N_t = 1,
+         high_P_t = 0)
 
 datr_pred <- datr_pred %>%
   cbind(fitted(mruci, newdata = datr_pred, re_formula = NA, nsamples = 100)) %>%
@@ -67,68 +99,167 @@ datr_pred <- datr_pred %>%
          lower = Q2.5,
          upper = Q97.5)
 
+# check that concentration scaling is consistent
+datp %>%
+  select(conc, conc_s) %>%
+  mutate(type = "data") %>%
+  full_join(datp_pred %>%
+              select(conc, conc_s) %>%
+              mutate(type = "pred")) %>%
+  ggplot(aes(x = conc, y = conc_s, color = type)) +
+  geom_line()
+
+datr %>%
+  select(conc, conc_s) %>%
+  mutate(type = "data") %>%
+  full_join(datr_pred %>%
+              select(conc, conc_s) %>%
+              mutate(type = "pred")) %>%
+  ggplot(aes(x = conc, y = conc_s, color = type)) +
+  geom_line()
+
 
 #### concentration-transmission figure ####
 
 # PAV concentration
-pconcp <- ggplot(datp, aes(x = conc)) +
-  geom_point(aes(y = t_up, color = nutrient, shape = inoculation), position = position_jitter(width = 0, height = 0.03), alpha = 0.5) +
-  geom_ribbon(data = datp_pred, aes(ymin = lower, ymax = upper), fill = "black", color = NA, alpha = 0.5, size = 0.5) +
-  geom_line(data = datp_pred, aes(y = pred), color = "black") +
+plotp_raw <- ggplot(datp, aes(x = conc)) +
+  geom_point(aes(y = t_up, color = nutrient, shape = nutrient_t, fill = interaction(nutrient, inoculation))) +
+  geom_ribbon(data = datp_pred, aes(ymin = lower, ymax = upper), fill = "black", color = NA, alpha = 0.3, size = 0.5) +
+  geom_line(data = datp_pred, aes(y = pred), color = "gray45", linetype = "dashed") +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
-        strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.position = c(0.42, 0.92),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  scale_colour_manual(values = col_pal, guide = F) +
+  scale_shape_manual(values = c(21, 22, 23, 24), guide = F) +
+  scale_fill_manual(values = c(col_pal, rep("white", 4)), guide = F) +
+  xlab("PAV density") +
+  ylab("PAV transmission") +
+  scale_y_continuous(breaks = c(0, 0.3, 0.6, 0.9))
+
+plotp_avg <- ggplot(datp_avg) +
+  geom_point(aes(x = conc_avg, y = t_up_avg, color = nutrient, shape = nutrient_t, fill = interaction(nutrient, inoculation))) +
+  geom_errorbar(aes(x = conc_avg, ymin = t_up_avg - t_up_se, ymax = t_up_avg + t_up_se, color = nutrient, group = treatment), width = 0) +
+  geom_errorbarh(aes(y = t_up_avg, xmin = conc_avg - conc_se, xmax = conc_avg + conc_se, color = nutrient, group = treatment), height = 0) +
+  geom_ribbon(data = filter(datp_pred, conc < 950 & conc > 50), aes(x = conc, ymin = lower, ymax = upper), fill = "black", color = NA, alpha = 0.3, size = 0.5) +
+  geom_line(data = filter(datp_pred, conc < 950 & conc > 50), aes(x = conc, y = pred), color = "gray45", linetype = "dashed") +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_text(color = "black", size = sm_txt),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.background = element_blank()) +
-  scale_size_manual(values = c(0.5, 0.5), guide = F) +
-  scale_colour_manual(values = col_pal,
-                      name = "Nutrient", guide = F) +
-  scale_shape_manual(values = c(19, 21), guide = F) +
-  scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
-  xlab("PAV density") +
-  ylab("PAV transmission")
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  scale_colour_manual(values = col_pal, guide = F) +
+  scale_shape_manual(values = c(21, 22, 23, 24), guide = F) +
+  scale_fill_manual(values = c(col_pal, rep("white", 4)), guide = F) +
+  scale_y_continuous(breaks = c(0, 0.3, 0.6, 0.9))
 
 # RPV concentration
-pconcr <- ggplot(datr, aes(x = conc)) +
-  geom_point(aes(y = t_up, color = nutrient, shape = inoculation), position = position_jitter(width = 0, height = 0.03), alpha = 0.5) +
-  geom_ribbon(data = datr_pred, aes(ymin = lower, ymax = upper), fill = "black", color = NA, alpha = 0.5, size = 0.5) +
-  geom_line(data = datr_pred, aes(y = pred), color = "black") +
+plotr_raw <- ggplot(datr) +
+  geom_point(aes(x = conc, y = t_up, color = nutrient, shape = nutrient_t, fill = interaction(nutrient, inoculation))) +
+  geom_ribbon(data = datr_pred, aes(x = conc, ymin = lower, ymax = upper), fill = "black", color = NA, alpha = 0.3, size = 0.5) +
+  geom_line(data = datr_pred, aes(x = conc, y = pred), color = "gray45", linetype = "dashed") +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = lg_txt),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  scale_colour_manual(values = col_pal, guide = F) +
+  scale_shape_manual(values = c(21, 22, 23, 24), guide = F) +
+  scale_fill_manual(values = c(col_pal, rep("white", 4)), guide = F) +
+  xlab("RPV density") +
+  ylab("RPV transmission") +
+  scale_y_continuous(breaks = c(0, 0.3, 0.6, 0.9))
+
+plotr_avg <- ggplot(datr_avg) +
+  geom_point(aes(x = conc_avg, y = t_up_avg, color = nutrient, shape = nutrient_t, fill = interaction(nutrient, inoculation))) +
+  geom_errorbar(aes(x = conc_avg, ymin = t_up_avg - t_up_se, ymax = t_up_avg + t_up_se, color = nutrient, group = treatment), width = 0) +
+  geom_errorbarh(aes(y = t_up_avg, xmin = conc_avg - conc_se, xmax = conc_avg + conc_se, color = nutrient, group = treatment), height = 0) +
+  geom_ribbon(data = filter(datr_pred, conc > 2850 & conc < 29650), aes(x = conc, ymin = lower, ymax = upper), fill = "black", color = NA, alpha = 0.3, size = 0.5) +
+  geom_line(data = filter(datr_pred, conc > 2850 & conc < 29650), aes(x = conc, y = pred), color = "gray45", linetype = "dashed") +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_text(color = "black", size = sm_txt),
+        strip.text = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        strip.background = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  scale_colour_manual(values = col_pal, guide = F) +
+  scale_shape_manual(values = c(21, 22, 23, 24), guide = F) +
+  scale_fill_manual(values = c(col_pal, rep("white", 4)), guide = F) +
+  scale_y_continuous(breaks = c(0, 0.3, 0.6, 0.9))
+
+# legends
+leg1 <- ggplot(filter(datr)) +
+  geom_point(aes(x = conc, y = t_up, color = nutrient, fill = inoculation)) +
+  theme(legend.title = element_text(color = "black", size = lg_txt),
         legend.text = element_text(color = "black", size = sm_txt),
         legend.background = element_blank(),
         legend.key = element_rect(color = "white", size = 0.5),
         legend.key.size = unit(0.5, "lines"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_blank(),
-        legend.spacing.y = unit(0.001, "mm")) +
-  scale_size_manual(values = c(0.5, 0.5), guide = F) +
-  scale_colour_manual(values = col_pal,
-                      name = "Source plant\n nutrient") +
-  scale_shape_manual(values = c(19, 21), name = "Inoculation") +
-  xlab("RPV density") +
-  ylab("RPV transmission")
+        legend.spacing.y = unit(0.001, "mm"),
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  scale_colour_manual(values = col_pal, name = "Source plant\nnutrient") +
+  scale_fill_manual(values = c(col_pal[1], "white"), name = "Source plant\ninfection") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-pconcleg <- get_legend(pconcr)
+leg2 <- ggplot(filter(datr)) +
+  geom_point(aes(x = conc, y = t_up, shape = nutrient_t), color = "black") +
+  theme(legend.title = element_text(color = "black", size = lg_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.background = element_blank(),
+        legend.key = element_rect(color = "white", size = 0.5),
+        legend.key.size = unit(0.5, "lines"),
+        legend.spacing.y = unit(0.001, "mm"),
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  scale_shape_manual(values = c(21, 22, 23, 24), name = "Recipient plant\nnutrient") 
 
-pconc <- plot_grid(pconcp, pconcr + theme(legend.position = "none"), pconcleg, 
-                            labels = c("a", "b"), 
-                            rel_widths = c(1, 1, 0.3),
+plotl1 <- get_legend(leg1)
+plotl2 <- get_legend(leg2)
+
+# combine plots
+plotp_avg$layers <- rev(plotp_avg$layers)
+plotp <- plotp_raw + annotation_custom(ggplotGrob(plotp_avg), xmin=1200, xmax=3200, ymin=0.03, ymax=0.6)
+
+plotr_avg$layers <- rev(plotr_avg$layers)
+plotr <- plotr_raw + annotation_custom(ggplotGrob(plotr_avg), xmin=60000, xmax=160000, ymin=0.03, ymax=0.6)
+
+pconc <- cowplot::plot_grid(plotp, plotl1, plotr, plotl2, 
+                            labels = c("a", "", "b", ""), 
+                            rel_widths = c(1, 0.3, 1, 0.3),
                             label_size = lg_txt,
-                            nrow = 1)
+                            nrow = 2)
 
-pdf("./output/figure_4_concentration_transmission.pdf", width = 6, height = 2.5)
+pdf("./output/figure_3_concentration_transmission.pdf", height = 6, width = 4)
 pconc
 dev.off()
+
+
+#### values for text ####
+
+# range of RPV transmission rates
+datr_pred %>%
+  filter(conc %in% c(min(datr_pred$conc), max(datr_pred$conc))) %>%
+  select(conc, pred)
+
+# observed RPV transmission for coinfection
+datr %>%
+  group_by(co) %>%
+  summarise(conc_avg = mean(conc),
+            conc_se = sd(conc)/sqrt(length(conc)),
+            t_up_avg = mean(t_up),
+            t_up_se = sd(t_up)/sqrt(length(t_up)))
+
+datp %>%
+  group_by(co) %>%
+  summarise(conc_avg = mean(conc),
+            conc_se = sd(conc)/sqrt(length(conc)),
+            t_up_avg = mean(t_up),
+            t_up_se = sd(t_up)/sqrt(length(t_up)))

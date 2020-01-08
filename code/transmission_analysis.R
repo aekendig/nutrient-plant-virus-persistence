@@ -121,7 +121,7 @@ tdat3 <- tdat2 %>%
   filter(!(ID == "2.4.PAV.P.3.N" & RPV_t == 0)) %>%
   filter(!(ID == "2.7.RPV.N.3.N" & PAV_t == 0))
 
-# sample size
+# sample size (Table S2)
 tdat3 %>%
   group_by(inoc, nutrient, nutrient_t) %>%
   summarise(PAV = sum(!is.na(PAV_t)), RPV = sum(!is.na(RPV_t))) %>%
@@ -131,191 +131,197 @@ tdat3 %>%
 #### combine concentration and transmission data ####
 
 # only keep overlapping data
-datp <- inner_join(qdatp3, tdat3)
-datr <- inner_join(qdatr3, tdat3)
-
-# sample sizes
-datp %>%
-  group_by(inoc, nutrient, nutrient_t) %>%
-  summarise(reps = n(), RPV = sum(RPV_t == 1)) %>%
-  data.frame()
-
-datr %>%
-  group_by(inoc, nutrient, nutrient_t) %>%
-  summarise(reps = n(), PAV = sum(PAV_t == 1)) %>%
-  data.frame()
-
-# incindental inoculations
-datp %>%
-  filter(inoc == "PAV") %>%
-  summarise(tot = n(), RPV = sum(RPV_t == 1))
-
 # make N and P columns for transmission
 # coinfection column for source plant
 # transmission columns
 # 0 concentration and quantity if missing
 # scale concentration and quantity
-datp <- datp %>%
+datp <- inner_join(qdatp3, tdat3) %>%
   mutate(high_N = ifelse(nutrient %in% c("N", "N+P"), 1, 0),
          high_P = ifelse(nutrient %in% c("P", "N+P"), 1, 0),
          high_N_t = ifelse(nutrient_t %in% c("N", "N+P"), 1, 0),
          high_P_t = ifelse(nutrient_t %in% c("P", "N+P"), 1, 0),
          co = ifelse(inoc == "coinfection", 1, 0),
          t_up = ceiling(PAV_t),
-         t_dn = floor(PAV_t),
-         conc_s = scale(conc),
-         quant_s = scale(quant_t))
+         t_dn = floor(PAV_t))
 
-datr <- datr %>%
+datr <- inner_join(qdatr3, tdat3) %>%
   mutate(high_N = ifelse(nutrient %in% c("N", "N+P"), 1, 0),
          high_P = ifelse(nutrient %in% c("P", "N+P"), 1, 0),
          high_N_t = ifelse(nutrient_t %in% c("N", "N+P"), 1, 0),
          high_P_t = ifelse(nutrient_t %in% c("P", "N+P"), 1, 0),
          co = ifelse(inoc == "coinfection", 1, 0),
-         t_up = ceiling(PAV_t),
-         t_dn = floor(PAV_t),
-         conc_s = scale(conc),
-         quant_s = scale(quant_t))
+         t_up = ceiling(RPV_t),
+         t_dn = floor(RPV_t))
 
 # check for NA's
 datp %>% 
-  select(t_up, t_dn, conc_s, quant_s, high_N, high_P, high_N_t, high_P_t, co) %>%
+  select(t_up, t_dn, conc, quant_t, high_N, high_P, high_N_t, high_P_t, co) %>%
   is.na() %>%
   colSums()
 
 datr %>% 
-  select(t_up, t_dn, conc_s, quant_s, high_N, high_P, high_N_t, high_P_t, co) %>%
+  select(t_up, t_dn, conc, quant_t, high_N, high_P, high_N_t, high_P_t, co) %>%
   is.na() %>%
   colSums()
 
 
+#### sample sizes and accidental infections ####
+
+# accidental inoculations from all samples (Table S2)
+datp %>%
+  filter(inoc == "PAV") %>%
+  group_by(nutrient, nutrient_t) %>%
+  summarise(RPV_up = sum(ceiling(RPV_t) == 1), RPV_dn = sum(floor(RPV_t) == 1)) %>%
+  data.frame()
+
+datr %>%
+  filter(inoc == "RPV") %>%
+  group_by(nutrient, nutrient_t) %>%
+  summarise(PAV_up = sum(ceiling(PAV_t) == 1), PAV_dn = sum(floor(PAV_t) == 1)) %>%
+  data.frame()
+
+# remove accidental infections and calculate standardized concentration and quantity
+datp2 <- datp %>%
+  mutate(RPV_up = ceiling(RPV_t)) %>%
+  filter(co == 1 | RPV_up == 0) %>%
+  select(-RPV_up) %>%
+  mutate(conc_s = (conc - mean(conc)) / sd(conc),
+         quant_s = (quant_t - mean(quant_t)) / sd(quant_t))
+
+datr2 <- datr %>%
+  mutate(PAV_up = ceiling(PAV_t)) %>%
+  filter(co == 1 | PAV_up == 0) %>%
+  select(-PAV_up) %>%
+  mutate(conc_s = (conc - mean(conc)) / sd(conc),
+         quant_s = (quant_t - mean(quant_t)) / sd(quant_t))
+
+# new sample sizes (Table S2)
+datp2 %>%
+  group_by(co, nutrient, nutrient_t) %>%
+  summarize(n = n()) %>%
+  data.frame()
+
+datr2 %>%
+  group_by(co, nutrient, nutrient_t) %>%
+  summarize(n = n()) %>%
+  data.frame()
+
+
 #### visualize sources of variation ####
 
-datp %>%
+datp2 %>%
   ggplot(aes(x = round, y = t_up)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
   facet_wrap(~inoc) # 3 lower for single
 
-datr %>%
+datr2 %>%
   ggplot(aes(x = round, y = t_up)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
-  facet_wrap(~inoc) # 1 higher for coinfection
+  facet_wrap(~inoc) # 3 higher for coinfection
 
-datp %>%
+datp2 %>%
   ggplot(aes(x = as.factor(time), y = t_up)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
   facet_wrap(~inoc) # increases with time
 
-datp %>%
+datp2 %>%
   ggplot(aes(x = as.factor(time), y = conc_s)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
   facet_wrap(~inoc) # so does conc
 
-cor.test(datp$conc_s, datp$time) # 0.22
+cor.test(datp2$conc_s, datp2$time) # 0.25
 
-datp %>%
+datp2 %>%
   ggplot(aes(x = as.factor(time), y = quant_s)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
   facet_wrap(~inoc) # and quantity
 
-cor.test(datp$quant_s, datp$time) #0.25
+cor.test(datp2$quant_s, datp2$time) #0.27
 
-datr %>%
+datr2 %>%
   ggplot(aes(x = as.factor(time), y = t_up)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
-  facet_wrap(~inoc) # increases with time
+  facet_wrap(~inoc) # constant with time
 
-datr %>%
+datr2 %>%
   ggplot(aes(x = as.factor(time), y = conc_s)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
-  facet_wrap(~inoc) # so does conc
+  facet_wrap(~inoc) # conc increases
 
-cor.test(datr$conc_s, datr$time) # 0.17
+cor.test(datr2$conc_s, datr2$time) # 0.19
 
-datr %>%
+datr2 %>%
   ggplot(aes(x = as.factor(time), y = quant_s)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
-  facet_wrap(~inoc) 
+  facet_wrap(~inoc) # so does quantity
 
-cor.test(datr$conc_s, datr$time) # 0.17
+cor.test(datr2$conc_s, datr2$time) # 0.19
 
-datp %>%
+datp2 %>%
   ggplot(aes(x = nutrient, y = t_up)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
-  facet_grid(nutrient_t ~ inoc)
+  facet_grid(nutrient_t ~ inoc) # look similar
 
-datr %>%
+datr2 %>%
   ggplot(aes(x = nutrient, y = t_up)) +
   stat_summary(geom = "point", size = 2, fun.y = "mean") +
   stat_summary(geom = "errorbar", width = 0.1, fun.data = "mean_cl_boot") +
-  facet_grid(nutrient_t ~ inoc)
-
-
-#### replicates ####
-
-datp %>%
-  group_by(co, nutrient, nutrient_t) %>%
-  summarize(n()) %>%
-  data.frame()
-
-datr %>%
-  group_by(co, nutrient, nutrient_t) %>%
-  summarize(n()) %>%
-  data.frame()
+  facet_grid(nutrient_t ~ inoc) # look similar
 
 
 #### statistical models ####
 
 # can't do autoregressive models with bernoulli
 
-mpuc <- brm(data = datp, family = bernoulli,
+mpuc <- brm(data = datp2, family = bernoulli,
            t_up ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time),
            prior = c(prior(normal(0, 10), class = Intercept),
                      prior(normal(0, 10), class = b),
                      prior(cauchy(0, 1), class = sd)),
            iter = 6000, warmup = 1000, chains = 3, cores = 2,
-           control = list(adapt_delta = 0.99))
+           control = list(adapt_delta = 0.9999))
 summary(mpuc)
 save(mpuc, file = "./output/transmission_pav_up_concentration.rda")
 
-mpuq <- update(mpuc, formula. = t_up ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp)
+mpuq <- update(mpuc, formula. = t_up ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp2)
 summary(mpuq)
 save(mpuq, file = "./output/transmission_pav_up_quantity.rda")
 
-mruc <- update(mpuc, formula. = t_up ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) +(1|time), newdata = datr)
+mruc <- update(mpuc, formula. = t_up ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) +(1|time), newdata = datr2)
 summary(mruc)
 save(mruc, file = "./output/transmission_rpv_up_concentration.rda")
-
-mruq <- update(mruc, formula. = t_up ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr)
+  
+mruq <- update(mruc, formula. = t_up ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr2, control = list(adapt_delta = 0.99999))
 summary(mruq)
 save(mruq, file = "./output/transmission_rpv_up_quantity.rda")
-
-mpdc <- update(mpuc, formula. = t_dn ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp, control = list(adapt_delta = 0.99999))
+  
+mpdc <- update(mpuc, formula. = t_dn ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp2, control = list(adapt_delta = 0.99999999))
 summary(mpdc)
 save(mpdc, file = "./output/transmission_pav_down_concentration.rda")
-
-mpdq <- update(mpdc, formula. = t_dn ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp, control = list(adapt_delta = 0.9999999))
+  
+mpdq <- update(mpdc, formula. = t_dn ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp2, control = list(adapt_delta = 0.9999999))
 summary(mpdq)
 save(mpdq, file = "./output/transmission_pav_down_quantity.rda")
-
-mrdc <- update(mruc, formula. = t_dn ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr)
+  
+mrdc <- update(mruc, formula. = t_dn ~ conc_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr2, control = list(adapt_delta = 0.9999999))
 summary(mrdc)
 save(mrdc, file = "./output/transmission_rpv_down_concentration.rda")
-
-mrdq <- update(mruc, formula. = t_dn ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr)
+  
+mrdq <- update(mruc, formula. = t_dn ~ quant_s + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr2)
 summary(mrdq)
 save(mrdq, file = "./output/transmission_rpv_down_quantity.rda")
 
-
+  
 #### check models ####
 
 # convergence of chains
@@ -380,7 +386,7 @@ ardc <- as.array(mrdc) %>%
   mutate(model = "RPV down conc uninformative")
 
 plot_intervals(full_join(aruc, ardc))
-# very similar, up a little more precise
+# very similar
 
 
 #### models with informative priors ####
@@ -421,6 +427,7 @@ mpuci <- update(mpuc,
                           prior(normal(0, 10), class = b, coef = co:high_N_t:high_P_t),
                           prior(cauchy(0, 1), class = sd)))
 
+summary(mpuci)
 plot(mpuci)
 
 save(mpuci, file = "./output/transmission_pav_up_concentration_informative.rda")
@@ -467,6 +474,6 @@ plot_intervals(full_join(aruc, aruci)) # smaller error bars, similar mean values
 #### save data for plotting ####
 
 # save file
-write_csv(datp, "./output/transmission_analysis_pav_data.csv")
-write_csv(datr, "./output/transmission_analysis_rpv_data.csv")
+write_csv(datp2, "./output/transmission_analysis_pav_data.csv")
+write_csv(datr2, "./output/transmission_analysis_rpv_data.csv")
 

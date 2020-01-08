@@ -310,7 +310,7 @@ d.at %>%
   select(sample, nutrient, target, inoc, quant_zero, conc)
 # 7 samples will be removed
 
-# accidental inoculations from all samples (Table S2)
+# accidental infections from all samples (Table S2)
 dat2 %>%
   group_by(target, dpi, time, inoc, nutrient, round, replicate, sample, PAVmin, PAVint, PAVslope, RPVmin, RPVint, RPVslope, q_group, RTPCR_PAV, RTPCR_RPV) %>%
   summarise(tech_cycle = mean(cycle, na.rm = T)) %>%
@@ -322,7 +322,7 @@ dat2 %>%
   select(inoc, sample, nutrient, quant, RTPCR_RPV, RTPCR_PAV) %>%
   arrange(inoc, nutrient) %>%
   data.frame()
-# not going to include samples that were positive for RT-PCR, but had no detectable density (NA)
+# not going to exclude samples that were positive for RT-PCR, but had no detectable density (NA)
 
 # data by virus
 d.at.p <- d.at %>%
@@ -331,7 +331,7 @@ d.at.p <- d.at %>%
 d.at.r <- d.at %>%
   filter(target == "RPV" & inoc != "PAV" & !(sample %in% acc.p$sample))
 
-# sample sizes (Table S2)
+# new sample sizes (Table S2)
 d.at.p %>%
   group_by(inoc, nutrient) %>%
   summarise(reps = n())
