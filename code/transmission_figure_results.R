@@ -17,8 +17,8 @@ datp <- read_csv("./output/transmission_analysis_pav_data.csv")
 datr <- read_csv("./output/transmission_analysis_rpv_data.csv")
 
 # load models
-load("./output/transmission_pav_up_concentration_informative.rda")
-load("./output/transmission_rpv_up_concentration_informative.rda")
+load("./output/transmission_pav_up_concentration_all_informative.rda")
+load("./output/transmission_rpv_up_concentration_all_informative.rda")
 
 # color palette
 col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
@@ -30,13 +30,13 @@ lg_txt = 8
 
 #### print model summaries ####
 
-tab_model(mpuci)
-summary(mpuci)
-prior_summary(mpuci)
+tab_model(mpcai)
+summary(mpcai)
+prior_summary(mpcai)
 
-tab_model(mruci)
-summary(mruci)
-prior_summary(mruci)
+tab_model(mrcai)
+summary(mrcai)
+prior_summary(mrcai)
 
 
 #### edit data ####
@@ -53,11 +53,11 @@ datr <- datr %>%
          nutrient = fct_relevel(nutrient, "low", "N", "P"))
 
 # posterior samples
-postr <- posterior_samples(mruci)
-postp <- posterior_samples(mpuci)
+postr <- posterior_samples(mrcai)
+postp <- posterior_samples(mpcai)
 
 # rename columns
-colnames(postr) <- colnames(postp) <- c("int", "conc", "co", "N", "P", "N_t", "P_t", "NP", "NP_t", "co_N", "co_P", "co_N_t", "co_P_t", "co_NP", "co_NP_t", "sd_round", "sd_time", "round_1", "round_2", "round_3", "round_4", "time_1", "time_2", "time_3", "time_4", "time_5", "time_6", "time_7", "time_8", "lp")
+colnames(postr) <- colnames(postp) <- c("int", "co", "conc", "N", "P", "N_t", "P_t", "co_conc", "NP", "NP_t", "co_N", "co_P", "co_N_t", "co_P_t", "conc_N", "conc_P", "conc_N_t", "conc_P_t", "co_NP", "co_NP_t", "conc_NP", "conc_NP_t", "co_conc_N", "co_conc_P", "co_conc_N_t", "co_conc_P_t", "co_conc_NP", "co_conc_NP_t", "sd_round", "sd_time", "round_1", "round_2", "round_3", "round_4", "time_1", "time_2", "time_3", "time_4", "time_5", "time_6", "time_7", "time_8", "lp")
 
 # category average
 
@@ -161,85 +161,6 @@ avgr <- combr %>%
          Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
   as_tibble()
 
-# percentage change due to coinfection across all nutrient combinations
-percp <- combp %>% 
-  transmute(n.l = n_l - l_l,
-            p.l = p_l - l_l,
-            b.l = b_l - l_l,
-            l.n = l_n - l_l,
-            n.n = n_n - n_l,
-            p.n = p_n - p_l,
-            b.n = b_n - b_l,
-            l.l.co = l_l_co - l_l,
-            l.n.co = l_n_co - l_n,
-            l.p.co = l_p_co - l_p,
-            l.b.co = l_b_co - l_b,
-            n.l.co = n_l_co - n_l,
-            n.n.co = n_n_co - n_n,
-            n.p.co = n_p_co - n_p,
-            n.b.co = n_b_co - n_b,
-            p.l.co = p_l_co - p_l,
-            p.n.co = p_n_co - p_n,
-            p.p.co = p_p_co - p_p,
-            p.b.co = p_b_co - p_b,
-            b.l.co = b_l_co - b_l,
-            b.n.co = b_n_co - b_n,
-            b.p.co = b_p_co - b_p,
-            b.b.co = b_b_co - b_b) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Coinoculation = case_when(substr(treatment, 5, 6) == "co" ~ "co",
-                                   TRUE ~ "single"),
-         Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
-                              substr(treatment, 1, 1) == "n" ~ "N",
-                              substr(treatment, 1, 1) == "p" ~ "P",
-                              substr(treatment, 1, 1) == "b" ~ "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")),
-         Nutrient_t = case_when(substr(treatment, 3, 3) == "l" ~ "low",
-                                substr(treatment, 3, 3) == "n" ~ "N",
-                                substr(treatment, 3, 3) == "p" ~ "P",
-                                substr(treatment, 3, 3) == "b" ~ "N+P"),
-         Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
-  as_tibble()
-
-percr <- combr %>% 
-  transmute(n.l = n_l - l_l,
-            p.l = p_l - l_l,
-            b.l = b_l - l_l,
-            l.n = l_n - l_l,
-            n.n = n_n - n_l,
-            p.n = p_n - p_l,
-            b.n = b_n - b_l,
-            l.l.co = l_l_co - l_l,
-            l.n.co = l_n_co - l_n,
-            l.p.co = l_p_co - l_p,
-            l.b.co = l_b_co - l_b,
-            n.l.co = n_l_co - n_l,
-            n.n.co = n_n_co - n_n,
-            n.p.co = n_p_co - n_p,
-            n.b.co = n_b_co - n_b,
-            p.l.co = p_l_co - p_l,
-            p.n.co = p_n_co - p_n,
-            p.p.co = p_p_co - p_p,
-            p.b.co = p_b_co - p_b,
-            b.l.co = b_l_co - b_l,
-            b.n.co = b_n_co - b_n,
-            b.p.co = b_p_co - b_p,
-            b.b.co = b_b_co - b_b) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Coinoculation = case_when(substr(treatment, 5, 6) == "co" ~ "co",
-                                   TRUE ~ "single"),
-         Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
-                              substr(treatment, 1, 1) == "n" ~ "N",
-                              substr(treatment, 1, 1) == "p" ~ "P",
-                              substr(treatment, 1, 1) == "b" ~ "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")),
-         Nutrient_t = case_when(substr(treatment, 3, 3) == "l" ~ "low",
-                                substr(treatment, 3, 3) == "n" ~ "N",
-                                substr(treatment, 3, 3) == "p" ~ "P",
-                                substr(treatment, 3, 3) == "b" ~ "N+P"),
-         Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
-  as_tibble()
-
 
 #### raw data figures ####
 
@@ -252,12 +173,6 @@ plotA <- datp %>%
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         strip.text = element_text(color = "black", size = lg_txt),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        legend.position = c(0.5, 0.95),
-        legend.direction = "horizontal",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank()) +
@@ -297,6 +212,57 @@ plotB <- datr %>%
   xlab("Days post inoculation") +
   ylab("RPV transmission")
 
+plotA_S <- datp %>%
+  ggplot(aes(x = dpi, y = t_up, color = nutrient_t)) +
+  stat_summary(fun.data = "mean_cl_boot", geom = "errorbar", width = 0.1, position = position_dodge(0.6), alpha = 0.5, aes(size = inoculation)) +
+  stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation), fill = "white") +
+  stat_summary(fun.y = "mean", geom = "line", position = position_dodge(0.6), aes(linetype = inoculation)) +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = lg_txt),
+        axis.text = element_text(color = "black", size = sm_txt),
+        strip.text = element_text(color = "black", size = lg_txt),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_blank()) +
+  scale_size_manual(values = c(0.5, 0.5), guide = F) +
+  scale_colour_manual(values = col_pal, guide = F) +
+  scale_shape_manual(values = c(19, 21), guide = F) +
+  scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
+  ylim(0, 1.07) + 
+  xlab("Days post inoculation") +
+  ylab("PAV transmission")
+
+plotB_S <- datr %>%
+  ggplot(aes(x = dpi, y = t_up, color = nutrient_t)) +
+  stat_summary(fun.data = "mean_cl_boot", geom = "errorbar", width = 0.1, position = position_dodge(0.6), alpha = 0.5, aes(size = inoculation)) +
+  stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation), fill = "white") +
+  stat_summary(fun.y = "mean", geom = "line", position = position_dodge(0.6), aes(linetype = inoculation)) +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = lg_txt),
+        axis.text = element_text(color = "black", size = sm_txt),
+        strip.text = element_text(color = "black", size = lg_txt),
+        legend.title = element_text(color = "black", size = lg_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_blank(),
+        legend.key.width = unit(1, "cm"),
+        legend.spacing.y = unit(-0.1, "mm"), 
+        legend.key = element_rect(size = 0.5, color = "white"),
+        legend.key.size = unit(0.7, 'lines'),
+        legend.box = "horizontal",
+        legend.position = "bottom",
+        legend.justification = c(0.5, 0.5)) +
+  scale_size_manual(values = c(0.5, 0.5), guide = F) +
+  scale_colour_manual(values = col_pal,
+                      name = "Recipient plant\nnutrient") +
+  scale_shape_manual(values = c(19, 21), name = "Source plant\ninfection") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "Source plant\ninfection") +
+  ylim(0, 1.07) + 
+  xlab("Days post inoculation") +
+  ylab("RPV transmission")
+
 
 #### figure of category averages ####
 
@@ -312,11 +278,6 @@ plotC <- avgp %>%
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         strip.text = element_text(color = "black", size = sm_txt),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        legend.position = c(0.85, 0.15),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
@@ -339,11 +300,6 @@ plotD <- avgr %>%
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         strip.text = element_text(color = "black", size = sm_txt),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        legend.position = c(0.85, 0.15),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
@@ -359,15 +315,24 @@ plotD <- avgr %>%
 
 # extract legend
 legB <- get_legend(plotB)
+legB_S <- get_legend(plotB_S)
 
 # combine plots
 plots <- align_plots(plotA, plotB + theme(legend.position = "none"), plotC, plotD, align = 'v', axis = 'l')
+
+plots_S <- align_plots(plotA_S, plotB_S + theme(legend.position = "none"), plotC, plotD, align = 'v', axis = 'l')
 
 # combine top row
 top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
                               labels = c("a", "b"), 
                               label_size = lg_txt, 
                               nrow = 1)
+
+top_row_S <- cowplot::plot_grid(plots_S[[1]], plots_S[[2]],
+                              labels = c("a", "b"), 
+                              label_size = lg_txt, 
+                              nrow = 1)
+
 # combine bottom row
 bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB, 
                                  labels = c("c", "d"), 
@@ -377,12 +342,21 @@ bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB,
                                  align = "h",
                                  axis = "t")
 
+
 # combine all
 plot <- cowplot::plot_grid(top_row, bottom_row, ncol = 1)
+
+plot_S <- cowplot::plot_grid(top_row_S, legB_S, 
+                             rel_heights = c(1, 0.1),
+                             ncol = 1)
 
 # print
 pdf("./output/figure_3_transmission.pdf", width = 6, height = 4)
 plot
+dev.off()
+
+pdf("./output/figure_S3_transmission.pdf", width = 6, height = 2.5)
+plot_S
 dev.off()
 
 
@@ -392,13 +366,188 @@ dev.off()
 summary(mpuci)
 summary(mruci)
 
+# percentage change due to coinfection across all nutrient combinations
+percp_co <- combp %>% 
+  transmute(l.l.co = l_l_co - l_l,
+            l.n.co = l_n_co - l_n,
+            l.p.co = l_p_co - l_p,
+            l.b.co = l_b_co - l_b,
+            n.l.co = n_l_co - n_l,
+            n.n.co = n_n_co - n_n,
+            n.p.co = n_p_co - n_p,
+            n.b.co = n_b_co - n_b,
+            p.l.co = p_l_co - p_l,
+            p.n.co = p_n_co - p_n,
+            p.p.co = p_p_co - p_p,
+            p.b.co = p_b_co - p_b,
+            b.l.co = b_l_co - b_l,
+            b.n.co = b_n_co - b_n,
+            b.p.co = b_p_co - b_p,
+            b.b.co = b_b_co - b_b) %>%
+  gather(key = "treatment", value = "effect") %>%
+  mutate(Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+                              substr(treatment, 1, 1) == "n" ~ "N",
+                              substr(treatment, 1, 1) == "p" ~ "P",
+                              substr(treatment, 1, 1) == "b" ~ "N+P"),
+         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")),
+         Nutrient_t = case_when(substr(treatment, 3, 3) == "l" ~ "low",
+                                substr(treatment, 3, 3) == "n" ~ "N",
+                                substr(treatment, 3, 3) == "p" ~ "P",
+                                substr(treatment, 3, 3) == "b" ~ "N+P"),
+         Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
+percr_co <- combr %>% 
+  transmute(l.l.co = l_l_co - l_l,
+            l.n.co = l_n_co - l_n,
+            l.p.co = l_p_co - l_p,
+            l.b.co = l_b_co - l_b,
+            n.l.co = n_l_co - n_l,
+            n.n.co = n_n_co - n_n,
+            n.p.co = n_p_co - n_p,
+            n.b.co = n_b_co - n_b,
+            p.l.co = p_l_co - p_l,
+            p.n.co = p_n_co - p_n,
+            p.p.co = p_p_co - p_p,
+            p.b.co = p_b_co - p_b,
+            b.l.co = b_l_co - b_l,
+            b.n.co = b_n_co - b_n,
+            b.p.co = b_p_co - b_p,
+            b.b.co = b_b_co - b_b) %>%
+  gather(key = "treatment", value = "effect") %>%
+  mutate(Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+                              substr(treatment, 1, 1) == "n" ~ "N",
+                              substr(treatment, 1, 1) == "p" ~ "P",
+                              substr(treatment, 1, 1) == "b" ~ "N+P"),
+         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")),
+         Nutrient_t = case_when(substr(treatment, 3, 3) == "l" ~ "low",
+                                substr(treatment, 3, 3) == "n" ~ "N",
+                                substr(treatment, 3, 3) == "p" ~ "P",
+                                substr(treatment, 3, 3) == "b" ~ "N+P"),
+         Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
+# percentage change due to nutrients across infection treatments
+percp_nut <- combp %>% 
+  transmute(n.l.co = n_l_co - l_l_co,
+            n.l = n_l - l_l,
+            p.l.co = p_l_co - l_l_co,
+            p.l = p_l - l_l,
+            b.l.co = b_l_co - l_l_co,
+            b.l = b_l - l_l,
+            l.n.co = l_n_co - l_l_co,
+            l.n = l_n - l_l,
+            l.p.co = l_p_co - l_l_co,
+            l.p = l_p - l_l,
+            l.b.co = l_b_co - l_l_co,
+            l.b = l_b - l_l) %>%
+  gather(key = "treatment", value = "effect") %>%
+  mutate(Coinoculation = case_when(substr(treatment, 5, 6) == "co" ~ "co",
+                                   TRUE ~ "single"),
+         Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+                              substr(treatment, 1, 1) == "n" ~ "N",
+                              substr(treatment, 1, 1) == "p" ~ "P",
+                              substr(treatment, 1, 1) == "b" ~ "N+P"),
+         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")),
+         Nutrient_t = case_when(substr(treatment, 3, 3) == "l" ~ "low",
+                                substr(treatment, 3, 3) == "n" ~ "N",
+                                substr(treatment, 3, 3) == "p" ~ "P",
+                                substr(treatment, 3, 3) == "b" ~ "N+P"),
+         Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
+percr_nut <- combr %>% 
+  transmute(n.l.co = n_l_co - l_l_co,
+            n.l = n_l - l_l,
+            p.l.co = p_l_co - l_l_co,
+            p.l = p_l - l_l,
+            b.l.co = b_l_co - l_l_co,
+            b.l = b_l - l_l,
+            l.n.co = l_n_co - l_l_co,
+            l.n = l_n - l_l,
+            l.p.co = l_p_co - l_l_co,
+            l.p = l_p - l_l,
+            l.b.co = l_b_co - l_l_co,
+            l.b = l_b - l_l) %>%
+  gather(key = "treatment", value = "effect") %>%
+  mutate(Coinoculation = case_when(substr(treatment, 5, 6) == "co" ~ "co",
+                                   TRUE ~ "single"),
+         Nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+                              substr(treatment, 1, 1) == "n" ~ "N",
+                              substr(treatment, 1, 1) == "p" ~ "P",
+                              substr(treatment, 1, 1) == "b" ~ "N+P"),
+         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")),
+         Nutrient_t = case_when(substr(treatment, 3, 3) == "l" ~ "low",
+                                substr(treatment, 3, 3) == "n" ~ "N",
+                                substr(treatment, 3, 3) == "p" ~ "P",
+                                substr(treatment, 3, 3) == "b" ~ "N+P"),
+         Nutrient_t = factor(Nutrient_t, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble()
+
+
 # mean values in proportion change, comparing co-inoculated with singly-inoculated plants
-percp %>%
+percp_co %>%
+  group_by(Nutrient, Nutrient_t, treatment) %>%
+  mean_hdi() %>%
+  data.frame()
+
+percr_co %>%
+  group_by(Nutrient, Nutrient_t, treatment) %>%
+  mean_hdi() %>%
+  data.frame()
+
+# mean values in proportion change, comparing nutrient treatments
+percp_nut %>%
   group_by(Coinoculation, Nutrient, Nutrient_t, treatment) %>%
   mean_hdi() %>%
   data.frame()
 
-percr %>%
+percr_nut %>%
   group_by(Coinoculation, Nutrient, Nutrient_t, treatment) %>%
   mean_hdi() %>%
   data.frame()
+
+# transmission rates for each treatment
+transp <- combp %>% 
+  gather(key = "treatment", value = "transmission") %>%
+  mutate(infection = case_when(substr(treatment, 5, 6) == "co" ~ "co",
+                                   TRUE ~ "single"),
+         source_nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+                              substr(treatment, 1, 1) == "n" ~ "N",
+                              substr(treatment, 1, 1) == "p" ~ "P",
+                              substr(treatment, 1, 1) == "b" ~ "N+P"),
+         source_nutrient = factor(source_nutrient, levels = c("low", "N", "P", "N+P")),
+         recipient_nutrient = case_when(substr(treatment, 3, 3) == "l" ~ "low",
+                                substr(treatment, 3, 3) == "n" ~ "N",
+                                substr(treatment, 3, 3) == "p" ~ "P",
+                                substr(treatment, 3, 3) == "b" ~ "N+P"),
+         recipient_nutrient = factor(recipient_nutrient, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble() %>%
+  group_by(infection, source_nutrient, recipient_nutrient, treatment) %>%
+  mean_hdi() %>%
+  mutate(virus = "PAV")
+
+transr <- combr %>% 
+  gather(key = "treatment", value = "transmission") %>%
+  mutate(infection = case_when(substr(treatment, 5, 6) == "co" ~ "co",
+                               TRUE ~ "single"),
+         source_nutrient = case_when(substr(treatment, 1, 1) == "l" ~ "low",
+                                     substr(treatment, 1, 1) == "n" ~ "N",
+                                     substr(treatment, 1, 1) == "p" ~ "P",
+                                     substr(treatment, 1, 1) == "b" ~ "N+P"),
+         source_nutrient = factor(source_nutrient, levels = c("low", "N", "P", "N+P")),
+         recipient_nutrient = case_when(substr(treatment, 3, 3) == "l" ~ "low",
+                                        substr(treatment, 3, 3) == "n" ~ "N",
+                                        substr(treatment, 3, 3) == "p" ~ "P",
+                                        substr(treatment, 3, 3) == "b" ~ "N+P"),
+         recipient_nutrient = factor(recipient_nutrient, levels = c("low", "N", "P", "N+P"))) %>%
+  as_tibble() %>%
+  group_by(infection, source_nutrient, recipient_nutrient, treatment) %>%
+  mean_hdi() %>%
+  mutate(virus = "RPV")
+
+# combine
+trans_dat <- full_join(transp, transr)
+
+# save
+write_csv(trans_dat, "./data/model_transmission_parameters.csv")

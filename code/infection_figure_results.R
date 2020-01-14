@@ -161,7 +161,7 @@ plotA <- datp %>%
   scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
   ylim(0, 1.07) + 
   xlab("Days post inoculation") +
-  ylab("PAV infection")
+  ylab("PAV infection prevalence")
 
 plotB <- datr %>%
   ggplot(aes(x = dpi, y = present, color = nutrient)) +
@@ -188,7 +188,7 @@ plotB <- datr %>%
   scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
   ylim(0, 1.07) + 
   xlab("Days post inoculation") +
-  ylab("RPV infection")
+  ylab("RPV infection prevalence")
 
 
 #### figure of category averages ####
@@ -214,7 +214,7 @@ plotC <- avgp %>%
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   xlab("Nutrient") +
-  ylab("Est. PAV infection")
+  ylab("Est. PAV infection prevalence")
 
 plotD <- avgr %>%
   group_by(treatment, Nutrient, Inoculation) %>%
@@ -237,7 +237,7 @@ plotD <- avgr %>%
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   xlab("Nutrient") +
-  ylab("Est. RPV infection")
+  ylab("Est. RPV infection prevalence")
 
 #### combine plots ####
 

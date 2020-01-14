@@ -62,11 +62,13 @@ tdrc %>%
   ggplot(aes(x = conc_s, y = RPV_t)) +
   geom_point() +
   facet_wrap(~nutrient)
+# too few points to estimate concentration effect within P
 
 tdpc %>%
   ggplot(aes(x = conc_s, y = PAV_t)) +
   geom_point() +
   facet_wrap(~nutrient)
+# too few points to estimate concentration effect within P, maybe N too
 
 tdr %>%
   ggplot(aes(x = nutrient, y = RPV_t, colour = as.factor(co))) +
