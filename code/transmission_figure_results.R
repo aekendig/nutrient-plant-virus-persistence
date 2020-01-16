@@ -353,3 +353,96 @@ summary(mrcii)
 prior_summary(mrcii)
 percr
 percr_all
+
+
+#### transmission values for model ####
+
+# modify prevalence function for density-only effects
+prevfun_den <- function(dat){
+  dat2 <- dat %>%
+    mutate(exp_val = exp(b_Intercept + 
+                           b_conc_s*conc_s + 
+                           `b_conc_s:high_N`*conc_s*high_N +
+                           `b_conc_s:high_P`*conc_s*high_P +
+                           `b_conc_s:high_N_t`*conc_s*high_N_t +
+                           `b_conc_s:high_P_t`*conc_s*high_P_t +
+                           `b_conc_s:high_N:high_P`*conc_s*high_N*high_P +
+                           `b_conc_s:high_N_t:high_P_t`*conc_s*high_N_t*high_P_t),
+           prev = exp_val / (1 + exp_val))
+  return(dat2)
+} 
+
+# transmission function
+transfun <- function(dat, density_only){
+  
+  ifelse(density_only == 0, dat2 <- prevfun(dat), dat2 <- prevfun_den(dat))
+  
+  dat3 <- dat2 %>% 
+    select(inoculation, nutrient, nutrient_t, prev) %>%
+    group_by(inoculation, nutrient, nutrient_t) %>% 
+    mean_hdi() %>%
+    ungroup()
+
+  return(dat3)
+}
+
+# apply to parameters
+pav_trans_all <- transfun(combp, 0) %>% 
+  mutate(mechanisms = "all")
+
+rpv_trans_all <- transfun(combr, 0) %>% 
+  mutate(mechanisms = "all")
+
+pav_trans_non <- transfun(combp %>% mutate(conc_s = 0), 0) %>% 
+  mutate(mechanisms = "non-density")
+
+rpv_trans_non <- transfun(combr %>% mutate(conc_s = 0), 0) %>% 
+  mutate(mechanisms = "non-density")
+
+pav_trans_den <- transfun(combp, 1) %>% 
+  mutate(mechanisms = "density")
+
+rpv_trans_den <- transfun(combr, 1) %>% 
+  mutate(mechanisms = "density")
+
+# combine
+pav_trans <- full_join(pav_trans_den, pav_trans_non) %>%
+  full_join(pav_trans_all) %>%
+  mutate(mechanisms = fct_relevel(mechanisms, "density", "non-density"))
+
+rpv_trans <- full_join(rpv_trans_den, rpv_trans_non) %>%
+  full_join(rpv_trans_all) %>%
+  mutate(mechanisms = fct_relevel(mechanisms, "density", "non-density"))
+
+# figure
+plot_pTra %+% pav_trans +
+  facet_grid(mechanisms ~ nutrient_t, switch = "x")
+
+plot_rTra %+% rpv_trans +
+  facet_grid(mechanisms ~ nutrient_t, switch = "x")
+
+# subset for same nutrient values
+pav_trans_same <- pav_trans %>%
+  filter(nutrient == nutrient_t)
+
+rpv_trans_same <- rpv_trans %>%
+  filter(nutrient == nutrient_t)
+
+# figure
+plot_pTra %+% pav_trans_same %+%
+  aes(x = nutrient_t, y = prev) %+%
+  facet_wrap(~mechanisms, nrow = 1) %+%
+  base_theme +
+  xlab("Recipient plant nutrient") +
+  ylab("Est. PAV transmission")
+
+plot_rTra %+% rpv_trans_same %+%
+  aes(x = nutrient_t, y = prev) %+%
+  facet_wrap(~mechanisms, nrow = 1) %+%
+  base_theme +
+  xlab("Recipient plant nutrient") +
+  ylab("Est. RPV transmission")
+
+# save data
+write_csv(pav_trans_same, "./output/pav_transmission_values_same_nuts.csv")
+write_csv(rpv_trans_same, "./output/rpv_transmission_values_same_nuts.csv")
