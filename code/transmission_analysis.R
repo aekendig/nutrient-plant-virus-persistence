@@ -468,80 +468,6 @@ plot_intervals(full_join(aruc, ardc))
 # very similar
 
 
-#### models with more interactions ####
-
-# concentration * source
-mpcs <- brm(data = datp2, family = bernoulli,
-            t_up ~ co * (conc_s * high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time),
-            prior = c(prior(normal(0, 10), class = Intercept),
-                      prior(normal(0, 10), class = b),
-                      prior(cauchy(0, 1), class = sd)),
-            iter = 6000, warmup = 1000, chains = 3, cores = 2,
-            control = list(adapt_delta = 0.9999))
-mpcs <- update(mpcs, formula. = t_up ~ co * (conc_s * high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp2, control = list(adapt_delta = 0.9999, max_treedepth = 15))
-summary(mpcs)
-save(mpcs, file = "./output/transmission_pav_up_concentration_source.rda")
-
-mrcs <- update(mpcs, formula. = t_up ~ co * (conc_s * high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr2)
-summary(mrcs)
-save(mrcs, file = "./output/transmission_rpv_up_concentration_source.rda")
-
-# concentration * recipient
-mpcr <- update(mpcs, formula. = t_up ~ co * (high_N * high_P + conc_s * high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp2)
-summary(mpcr)
-save(mpcr, file = "./output/transmission_pav_up_concentration_recipient.rda")
-
-mrcr <- update(mpcs, formula. = t_up ~ co * (high_N * high_P + conc_s * high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr2)
-summary(mrcr)
-save(mrcr, file = "./output/transmission_rpv_up_concentration_recipient.rda")
-
-# concentration * all nutrient
-mpca <- update(mpcs, formula. = t_up ~ co * conc_s * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datp2)
-summary(mpca)
-save(mpca, file = "./output/transmission_pav_up_concentration_all.rda")
-
-mrca <- update(mpcs, formula. = t_up ~ co * conc_s * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time), newdata = datr2)
-summary(mrca)
-save(mrca, file = "./output/transmission_rpv_up_concentration_all.rda")
-
-# compare source and recipient
-params_s = c(params, "b_conc_s:high_N", "b_conc_s:high_P", "b_conc_s:high_N:high_P", "b_co:conc_s", "b_co:conc_s:high_N", "b_co:conc_s:high_P", "b_co:conc_s:high_N:high_P")
-
-params_r = c(params, "b_conc_s:high_N_t", "b_conc_s:high_P_t", "b_conc_s:high_N_t:high_P_t", "b_co:conc_s", "b_co:conc_s:high_N_t", "b_co:conc_s:high_P_t", "b_co:conc_s:high_N_t:high_P_t")
-
-params_a = c(params, "b_conc_s:high_N", "b_conc_s:high_P", "b_conc_s:high_N:high_P", "b_co:conc_s", "b_co:conc_s:high_N", "b_co:conc_s:high_P", "b_co:conc_s:high_N:high_P", "b_conc_s:high_N_t", "b_conc_s:high_P_t", "b_conc_s:high_N_t:high_P_t", "b_co:conc_s:high_N_t", "b_co:conc_s:high_P_t", "b_co:conc_s:high_N_t:high_P_t")
-
-apcs <- as.array(mpcs) %>%
-  mcmc_intervals_data(pars = params_s) %>%
-  mutate(model = "PAV conc * source")
-
-apcr <- as.array(mpcr) %>%
-  mcmc_intervals_data(pars = params_r) %>%
-  mutate(model = "PAV conc * recipient")
-
-apca <- as.array(mpca) %>%
-  mcmc_intervals_data(pars = params_a) %>%
-  mutate(model = "PAV conc * all")
-
-plot_intervals(full_join(apcs, apcr) %>% full_join(apca)) 
-# full model is similar to the partial ones
-# when the concentration interaction is left out of partial ones, the non-concentration effect of treatment becomes stronger
-
-arcs <- as.array(mrcs) %>%
-  mcmc_intervals_data(pars = params_s) %>%
-  mutate(model = "RPV conc * source")
-
-arcr <- as.array(mrcr) %>%
-  mcmc_intervals_data(pars = params_r) %>%
-  mutate(model = "RPV conc * recipient")
-
-arca <- as.array(mrca) %>%
-  mcmc_intervals_data(pars = params_a) %>%
-  mutate(model = "RPV conc * all")
-
-plot_intervals(full_join(arcs, arcr) %>% full_join(arca)) 
-
-
 #### models with informative priors ####
 
 # compare estimates for prior model and model without priors
@@ -623,79 +549,74 @@ aruci <- as.array(mruci) %>%
 
 plot_intervals(full_join(aruc, aruci)) # smaller error bars, similar mean values
 
-# concentration * nutrients
-mpcai <- update(mpca,
-                prior = c(prior(normal(1.53, 0.60), class = Intercept),
-                          prior(normal(-0.26, 0.28), class = b, coef = conc_s),
-                          prior(normal(6.05, 4.17), class = b, coef = co),
-                          prior(normal(0.69, 0.94), class = b, coef = high_N),
-                          prior(normal(0.63, 1.42), class = b, coef = high_P),
-                          prior(normal(-6.51, 4.23), class = b, coef = co:high_N),
-                          prior(normal(0, 10), class = b, coef = co:high_P),
-                          prior(normal(-0.20, 1.63), class = b, coef = high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = co:high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = high_N_t),
-                          prior(normal(0, 10), class = b, coef = high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:high_N_t),
-                          prior(normal(0, 10), class = b, coef = co:high_P_t),
-                          prior(normal(0, 10), class = b, coef = high_N_t:high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:high_N_t:high_P_t),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_P),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N_t),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_P_t),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N_t:high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:conc_s),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_P),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N_t),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N_t:high_P_t),
-                          prior(cauchy(0, 1), class = sd)))
-save(mpcai, file = "./output/transmission_pav_up_concentration_all_informative.rda")
 
-summary(mpcai)
-plot(mpcai)
+#### models with concentration interactions and informative priors ####
+mpcii <- brm(data = datp2, family = bernoulli,
+             formula = t_up ~ conc_s * (high_N * high_P + high_N_t * high_P_t) + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time),
+             prior = c(prior(normal(1.53, 0.60), class = Intercept),
+                       prior(normal(-0.26, 0.28), class = b, coef = conc_s),
+                       prior(normal(6.05, 4.17), class = b, coef = co),
+                       prior(normal(0.69, 0.94), class = b, coef = high_N),
+                       prior(normal(0.63, 1.42), class = b, coef = high_P),
+                       prior(normal(0, 10), class = b, coef = high_N_t),
+                       prior(normal(0, 10), class = b, coef = high_P_t),
+                       prior(normal(-0.20, 1.63), class = b, coef = high_N:high_P),
+                       prior(normal(0, 10), class = b, coef = high_N_t:high_P_t),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_P),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N_t),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_P_t),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N:high_P),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N_t:high_P_t),
+                       prior(normal(-6.51, 4.23), class = b, coef = high_N:co),
+                       prior(normal(0, 10), class = b, coef = high_P:co),
+                       prior(normal(0, 10), class = b, coef = high_N_t:co),
+                       prior(normal(0, 10), class = b, coef = high_P_t:co),
+                       prior(normal(0, 10), class = b, coef = high_N:high_P:co),
+                       prior(normal(0, 10), class = b, coef = high_N_t:high_P_t:co),
+                       prior(cauchy(0, 1), class = sd)),
+             iter = 6000, warmup = 1000, chains = 3, cores = 2,
+             control = list(adapt_delta = 0.9999))
+save(mpcii, file = "./output/transmission_pav_up_concentration_interaction_informative.rda")
 
-mrcai <- update(mrca,
-                prior = c(prior(normal(0.54, 0.30), class = Intercept),
-                          prior(normal(0.19, 0.13), class = b, coef = conc_s),
-                          prior(normal(-0.19, 0.44), class = b, coef = co),
-                          prior(normal(0.62, 0.42), class = b, coef = high_N),
-                          prior(normal(0.13, 0.71), class = b, coef = high_P),
-                          prior(normal(0.33, 0.60), class = b, coef = co:high_N),
-                          prior(normal(-0.10, 1.12), class = b, coef = co:high_P),
-                          prior(normal(-0.01, 0.86), class = b, coef = high_N:high_P),
-                          prior(normal(-0.60, 1.28), class = b, coef = co:high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = high_N_t),
-                          prior(normal(0, 10), class = b, coef = high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:high_N_t),
-                          prior(normal(0, 10), class = b, coef = co:high_P_t),
-                          prior(normal(0, 10), class = b, coef = high_N_t:high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:high_N_t:high_P_t),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_P),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N_t),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_P_t),
-                          prior(normal(0, 10), class = b, coef = conc_s:high_N_t:high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:conc_s),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_P),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N:high_P),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N_t),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_P_t),
-                          prior(normal(0, 10), class = b, coef = co:conc_s:high_N_t:high_P_t),
-                          prior(cauchy(0, 1), class = sd)))
-save(mrcai, file = "./output/transmission_rpv_up_concentration_all_informative.rda")
-
-summary(mrcai)
-plot(mrcai)
+summary(mpcii)
+plot(mpcii)
 
 
-#### models for coinfected plants ####
+# co:high_N + co:high_P + co:high_N:high_P + co:high_N_t + co:high_P_t + co:high_N_t:high_P_t
+mrcii <- brm(data = datr2, family = bernoulli,
+             formula = t_up ~ conc_s * (high_N * high_P + high_N_t * high_P_t) + co * (high_N * high_P + high_N_t * high_P_t) + (1|round) + (1|time),
+             prior = c(prior(normal(0.54, 0.30), class = Intercept),
+                       prior(normal(0.19, 0.13), class = b, coef = conc_s),
+                       prior(normal(-0.19, 0.44), class = b, coef = co),
+                       prior(normal(0.62, 0.42), class = b, coef = high_N),
+                       prior(normal(0.13, 0.71), class = b, coef = high_P),
+                       prior(normal(0, 10), class = b, coef = high_N_t),
+                       prior(normal(0, 10), class = b, coef = high_P_t),
+                       prior(normal(-0.01, 0.86), class = b, coef = high_N:high_P),
+                       prior(normal(0, 10), class = b, coef = high_N_t:high_P_t),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_P),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N:high_P),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N_t),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_P_t),
+                       prior(normal(0, 10), class = b, coef = conc_s:high_N_t:high_P_t),
+                       prior(normal(0.33, 0.60), class = b, coef = high_N:co),
+                       prior(normal(-0.10, 1.12), class = b, coef = high_P:co),
+                       prior(normal(-0.60, 1.28), class = b, coef = high_N:high_P:co),
+                       prior(normal(0, 10), class = b, coef = high_N_t:co),
+                       prior(normal(0, 10), class = b, coef = high_P_t:co),
+                       prior(normal(0, 10), class = b, coef = high_N_t:high_P_t:co),
+                       prior(cauchy(0, 1), class = sd)),
+             iter = 6000, warmup = 1000, chains = 3, cores = 2,
+             control = list(adapt_delta = 0.9999))
+save(mrcii, file = "./output/transmission_rpv_up_concentration_interaction_informative.rda")
+
+summary(mrcii)
+plot(mrcii)
+
+
+#### models for coinfected plants (need to be updated if used) ####
 
 # select data
 datpco <- datp2 %>%
