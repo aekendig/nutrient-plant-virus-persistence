@@ -20,24 +20,6 @@ rdat <- read_csv("./output/concentration_analysis_rpv_data.csv")
 load("./output/concentration_analysis_informative_pav.rda")
 load("./output/concentration_analysis_informative_rpv.rda")
 
-# color palette
-col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
-
-# text sizes
-sm_txt = 6
-lg_txt = 8
-
-
-#### print model summaries ####
-
-tab_model(m.li.p)
-summary(m.li.p)
-prior_summary(m.li.p)
-
-tab_model(m.li.r)
-summary(m.li.r)
-prior_summary(m.li.r)
-
 
 #### edit data ####
 
@@ -56,188 +38,143 @@ rdat <- rdat %>%
 postr <- posterior_samples(m.li.r)
 postp <- posterior_samples(m.li.p)
 
-# rename columns
-colnames(postr) <- colnames(postp) <- c("int", "co", "N", "P", "co_N", "co_P", "NP", "co_NP", "ar", "sigma", "lp")
+# treatments
+trtp <- pdat %>%
+  select(inoculation, nutrient, co, high_N, high_P) %>%
+  unique()
+
+trtr <- rdat %>%
+  select(inoculation, nutrient, co, high_N, high_P) %>%
+  unique()
+
+# merge treatments and posterior samples
+combp <- merge(trtp, postp, all = T)
+combr <- merge(trtr, postr, all = T)
 
 # category average
+avgfun <- function(dat){
+  dat2 <- dat %>%
+    mutate(avg = b_Intercept +
+             b_high_N*high_N +
+             b_high_P*high_P +
+             b_co*co +
+             `b_high_N:high_P`*high_N*high_P +
+             `b_co:high_N`*co*high_N +
+             `b_co:high_P`*co*high_P +
+             `b_co:high_N:high_P`*co*high_N*high_P) %>%
+    select(nutrient, inoculation, avg) %>% 
+    group_by(nutrient, inoculation) %>%
+    mean_hdi() %>%
+    ungroup()
+  
+  return(dat2)
+} 
 
-avgp <- postp %>%
-  transmute(low = int,
-            high_N = int + N,
-            high_P = int + P,
-            high_NP = int + N + P + NP,
-            low_co =  int + co,
-            N_co = int + N + co + co_N,
-            P_co = int + P + co + co_P,
-            NP_co = int + N + P + co + co_N + co_P + NP + co_NP) %>%
-   gather(key = "treatment", value = "effect") %>%
-   mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
-          Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
-          Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
-          Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P"))) %>%
-  as_tibble()
+avgp <- avgfun(combp) 
+avgr <- avgfun(combr) 
 
-avgr <- postr %>%
-  transmute(low = int,
-            high_N = int + N,
-            high_P = int + P,
-            high_NP = int + N + P + NP,
-            low_co =  int + co,
-            N_co = int + N + co + co_N,
-            P_co = int + P + co + co_P,
-            NP_co = int + N + P + co + co_N + co_P + NP + co_NP) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
-         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
-         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P"))) %>%
-  as_tibble()
+# percentage change
+percfun <- function(dat){
+  dat2 <- dat %>%
+    mutate(single = case_when(inoculation == "single" ~ 1,
+                              TRUE ~ 0),
+           perc = exp(b_high_N*high_N*single +
+                        b_high_P*high_P*single +
+                        `b_high_N:high_P`*high_N*high_P*single +
+                        b_co*co +
+                        `b_co:high_N`*high_N*co +
+                        `b_co:high_P`*high_P*co +
+                        `b_co:high_N:high_P`*high_N*high_P*co) - 1) %>%
+    select(nutrient, inoculation, perc) %>% 
+    group_by(nutrient, inoculation) %>%
+    mean_hdi() %>%
+    ungroup()
+  
+  return(dat2)
+} 
 
-# percentage increase
+percp <- percfun(combp)
+percr <- percfun(combr)
 
-slopep <- postp %>%
-  transmute(high_N = (exp(N) - 1),
-            high_P = (exp(P) - 1),
-            high_NP = (exp(N + P + NP) - 1),
-            low_co =  (exp(co) - 1),
-            N_co = (exp(co + co_N) - 1),
-            P_co = (exp(co + co_P) - 1),
-            NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
-         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
-         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
 
-sloper <- postr %>%
-  transmute(high_N = (exp(N) - 1),
-            high_P = (exp(P) - 1),
-            high_NP = (exp(N + P + NP) - 1),
-            low_co =  (exp(co) - 1),
-            N_co = (exp(co + co_N) - 1),
-            P_co = (exp(co + co_P) - 1),
-            NP_co = (exp(co + co_N + co_P + co_NP) - 1)) %>%
-  gather(key = "treatment", value = "effect") %>%
-  mutate(Inoculation = ifelse(grepl("co", treatment, fixed = T), "coinfection", "single"),
-         Inoculation = factor(Inoculation, levels = c("single", "coinfection")),
-         Nutrient = recode(treatment, high_N = "N", high_P = "P", high_NP = "N+P", low_co = "low", N_co = "N", P_co = "P", NP_co = "N+P"),
-         Nutrient = factor(Nutrient, levels = c("low", "N", "P", "N+P")))
+#### figure settings ####
 
-# check treatments
-sloper %>% select(treatment, Inoculation, Nutrient) %>% unique()
+# palettes
+col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
+line_pal = c("solid", "dashed")
+shape_pal = c(19, 21)
+
+# text sizes
+sm_txt = 6
+lg_txt = 8
+
+# base figure
+base_theme <- theme_bw() +
+  theme(axis.title = element_text(color = "black", size = lg_txt),
+        axis.text = element_text(color = "black", size = sm_txt),
+        plot.title = element_text(color = "black", size = lg_txt, hjust= 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(color = "black", size = sm_txt),
+        strip.background = element_blank(),
+        panel.spacing = unit(0, "lines"),
+        legend.position = "none")
 
 
 #### figures of raw data ####
  
-# PAV (concentration over time)
-plotA <- ggplot(pdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
-  stat_summary(fun.data = "mean_se", geom = "errorbar", width = 0.1, position = position_dodge(0.6), aes(size = inoculation)) +
+plotA <- ggplot(pdat, aes(x = dpi, y = log_conc, color = nutrient)) +
+  stat_summary(fun.data = "mean_cl_boot", geom = "errorbar", width = 0.1, position = position_dodge(0.6), aes(size = inoculation)) +
   stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation), fill = "white") +
   stat_summary(aes(linetype = inoculation), fun.y = "mean", geom = "line", position = position_dodge(0.6)) +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
-        axis.text = element_text(color = "black", size = sm_txt),
-        strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = lg_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        #legend.position = c(0.42, 0.92),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        #legend.direction = "horizontal",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_blank()) +
-  scale_size_manual(values = c(0.5, 0.5), guide = F) +
-  scale_colour_manual(values = col_pal,
-                      name = "Nutrient", guide = F) +
-  scale_shape_manual(values = c(19, 21), guide = F) +
-  scale_linetype_manual(values = c("solid", "dashed"), guide = F) +
+  base_theme +
+  scale_size_manual(values = c(0.5, 0.5)) +
+  scale_colour_manual(values = col_pal) +
+  scale_shape_manual(values = shape_pal) +
+  scale_linetype_manual(values = line_pal) +
   xlab("Days post inoculation") +
   ylab("ln(PAV density)")
 
-# RPV (concentration over time)
-plotB <- ggplot(rdat, aes(x = dpi, y = log_conc, colour = nutrient)) +
-  stat_summary(fun.data = "mean_se", geom = "errorbar", width = 0.1, position = position_dodge(0.6), aes(size = inoculation), show.legend = F) +
-  stat_summary(fun.y = "mean", geom = "point", size = 1.5, position = position_dodge(0.6), aes(shape = inoculation), fill = "white") +
-  stat_summary(fun.y = "mean", geom = "line", position = position_dodge(0.6), aes(linetype = inoculation)) +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
-        axis.text = element_text(color = "black", size = sm_txt),
-        strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = lg_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        #legend.position = c(0.34, 0.93),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        #legend.direction = "horizontal",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
-  scale_size_manual(values = c(0.5, 0.5), name = "Inoculation") +
-  scale_colour_manual(values = col_pal, name = "Nutrient") +
-  scale_shape_manual(values = c(19, 21), name = "Inoculation") +
-  scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation") +
-  xlab("Days post inoculation") +
+plotB <- plotA %+% rdat %+%
   ylab("ln(RPV density)")
 
 
 #### figures of category averages ####
 
-plotC <- avgp %>%
-  group_by(treatment, Nutrient, Inoculation) %>%
-  mean_hdi() %>%
-  ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
-  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
-        axis.text = element_text(color = "black", size = sm_txt),
-        strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
+plotC <- ggplot(avgp, aes(x = nutrient, y = avg,  color = nutrient)) +
+  geom_pointinterval(aes(shape = inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
+  base_theme +
   scale_colour_manual(values = col_pal) +
-  scale_shape_manual(values = c(19, 21)) +
+  scale_shape_manual(values = shape_pal) +
   xlab("Nutrient") +
   ylab("Est. ln(PAV density)")
 
-plotD <- avgr %>%
-  group_by(treatment, Nutrient, Inoculation) %>%
-  mean_hdi() %>%
-  ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
-  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = lg_txt),
-        axis.text = element_text(color = "black", size = sm_txt),
-        strip.text = element_blank(),
-        legend.title = element_text(color = "black", size = sm_txt),
-        legend.text = element_text(color = "black", size = sm_txt),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.background = element_blank(),
-        legend.key.width = unit(1, "cm")) +
-  scale_colour_manual(values = col_pal) +
-  scale_shape_manual(values = c(19, 21)) +
-  xlab("Nutrient") +
+plotD <- plotC %+% avgr %+%
   ylab("Est. ln(RPV density)")
+
+
+
+#### legend ####
+
+leg <- get_legend(plotA %+% 
+                     theme(legend.position = "right",
+                           legend.spacing.y = unit(-0.1, "mm"),
+                           legend.key = element_rect(size = 0.5, color = "white"),
+                           legend.key.size = unit(0.7, 'lines'),
+                           legend.title = element_text(color = "black", size = lg_txt),
+                           legend.text = element_text(color = "black", size = sm_txt),
+                           legend.background = element_blank(),
+                           legend.key.width = unit(1, "cm")) %+%
+                     scale_size_manual(values = c(0.5, 0.5), name = "Inoculation") +
+                     scale_colour_manual(values = col_pal, name = "Nutrient") +
+                     scale_shape_manual(values = c(19, 21), name = "Inoculation") +
+                     scale_linetype_manual(values = c("solid", "dashed"), name = "Inoculation"))
 
 
 #### combine plots ####
 
-# extract legend
-legB <- get_legend(plotB + theme(legend.spacing.y = unit(-0.1, "mm"), 
-                                 legend.key = element_rect(size = 0.5, color = "white"),
-                                 legend.key.size = unit(0.7, 'lines')))
-
 # combine plots
-plots <- align_plots(plotA, plotB + theme(legend.position = "none"), plotC, plotD, align = 'v', axis = 'l')
+plots <- align_plots(plotA, plotB, plotC, plotD, align = 'v', axis = 'l')
 
 # combine top row
 top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
@@ -245,7 +182,7 @@ top_row <- cowplot::plot_grid(plots[[1]], plots[[2]],
                               label_size = lg_txt, 
                               nrow = 1)
 # combine bottom row
-bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], legB, 
+bottom_row <- cowplot::plot_grid(plots[[3]], plots[[4]], leg, 
                   labels = c("c", "d"), 
                   label_size = lg_txt, 
                   rel_widths = c(1, 1, 0.3),
@@ -262,20 +199,17 @@ plot
 dev.off()
 
 
-#### numbers for text ####
+#### print model summaries ####
 
-# model summaries
+tab_model(m.li.p)
 summary(m.li.p)
+prior_summary(m.li.p)
+percp
+
+tab_model(m.li.r)
 summary(m.li.r)
-
-# mean values in proportion change
-slopep %>%
-  group_by(treatment, Inoculation, Nutrient) %>%
-  mean_hdi()
-
-sloper %>%
-  group_by(treatment, Inoculation, Nutrient) %>%
-  mean_hdi()
+prior_summary(m.li.r)
+percr
 
 
 

@@ -341,36 +341,6 @@ d.at.r %>%
   summarise(reps = n())
 
 
-#### coinfection correlation ####
-
-# combine data
-d.at.c <- d.at.p %>%
-  filter(inoc == "coinfection") %>%
-  select(dpi, time, nutrient, round, replicate, conc, log_conc) %>%
-  rename(pav_conc = conc, pav_log_conc = log_conc) %>%
-  inner_join(d.at.r %>%
-               filter(inoc == "coinfection") %>%
-               select(dpi, time, nutrient, round, replicate, conc, log_conc) %>%
-               rename(rpv_conc = conc, rpv_log_conc = log_conc))
-
-# full correlation
-cor.test(~ pav_log_conc + rpv_log_conc, data = d.at.c)
-
-# by nutrient
-d.at.c %>%
-  filter(nutrient == "low") %>%
-  cor.test(~ pav_log_conc + rpv_log_conc, data = .)
-d.at.c %>%
-  filter(nutrient == "N") %>%
-  cor.test(~ pav_log_conc + rpv_log_conc, data = .)
-d.at.c %>%
-  filter(nutrient == "P") %>%
-  cor.test(~ pav_log_conc + rpv_log_conc, data = .)
-d.at.c %>%
-  filter(nutrient == "N+P") %>%
-  cor.test(~ pav_log_conc + rpv_log_conc, data = .)
-
-
 #### log-transformed models, uninformative priors ####
 
 # PAV model
@@ -545,5 +515,4 @@ pp_check(m.lid.r, nsamples = 100)
 # save file
 write_csv(d.at.p, "./output/concentration_analysis_pav_data.csv")
 write_csv(d.at.r, "./output/concentration_analysis_rpv_data.csv")
-write_csv(d.at.c, "./output/concentration_analysis_coinfection_data.csv")
 write_csv(dat4, "./output/concentration_analysis_all_data.csv")
