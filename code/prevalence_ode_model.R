@@ -19,31 +19,19 @@ rtran <- read_csv("./output/rpv_transmission_values_same_nuts.csv")
 
 # calculate parameters
 ptran2 <- ptran %>%
-  select(inoculation, nutrient, prev, mechanisms) %>%
-  spread(key = inoculation, value = prev) %>%
-  mutate(qP = co / single) %>%
-  select(-co) %>%
-  rename(BP = single)
+  select(mechanisms, nutrient, parameter, value) %>%
+  spread(key = parameter, value = value) %>%
+  rename(BP = B,
+         qP = q)
 
 rtran2 <- rtran %>%
-  select(inoculation, nutrient, prev, mechanisms) %>%
-  spread(key = inoculation, value = prev) %>%
-  mutate(qR = co / single) %>%
-  select(-co) %>%
-  rename(BR = single)
+  select(mechanisms, nutrient, parameter, value) %>%
+  spread(key = parameter, value = value) %>%
+  rename(BR = B,
+         qR = q)
 
 # combine data
-tran_co <- full_join(ptran2, rtran2) %>%
-  mutate(interactions = 1)
-
-# create data without interactions
-tran_s <- tran_co %>%
-  mutate(qP = 1,
-         qR = 1) %>%
-  mutate(interactions = 0)
-
-# combine data
-tran <- full_join(tran_co, tran_s)
+tran <- full_join(ptran2, rtran2)
 
 
 #### model ####
@@ -79,59 +67,135 @@ simmod = function(parm_dat){
 
 #### constants ####
 
-Sinit = 4000
-Pinit = 1
-Rinit = 1
+Ntot = 4000
 Cinit = 0
+days = 120
+trans_time = 6
+simtime = days / trans_time
+time_dat <- tibble(time = 1:simtime)
+
+
+#### PAV only model ####
+
+Sinit = Ntot - 1
+Pinit = 1
+Rinit = 0
 Ninit = Sinit + Pinit + Rinit + Cinit
-days = 40
-simtime = days / 4
-thresh_C = 0.5 * Ninit
-
-
-#### test model ####
-
-# test <- simmod(tran[1, ])
-# test %>%
-#   mutate(N = S + P + R + C)
-
-
-#### run model ####
 
 # create columns
-tran2 <- tran %>%
-  mutate(S = NA,
+tranP <- expand_grid(tran, time_dat) %>%
+  mutate(virus = "PAV",
+         S = NA,
          P = NA,
          R = NA,
-         C = NA,
-         time_C = NA)
+         C = NA)
 
-# add final numbers to each parameter set
-for(i in 1:nrow(tran2)){
+# add output to each parameter set
+pdf("./output/prevalence_ode_pav_simulations.pdf")
+for(i in 1:nrow(tran)){
   
-  mod <- simmod(tran2[i, ])
+  mod <- simmod(tran[i, ])
   
-  tran2[i, c('S','P', 'R', 'C')] <- mod[simtime, c('S','P', 'R', 'C')]
-  # tran2[i, 'time_C'] <- filter(mod, C > thresh_C) %>%
-  #   select(time) %>%
-  #   min() * 4
+  tranP[(simtime*(i-1) + 1):(simtime*i), c('S','P', 'R', 'C')] <- mod[ , c('S','P', 'R', 'C')]
   
+  print(ggplot(mod, aes(x = time)) +
+          geom_line(aes(y = S), color = "black") +
+          geom_line(aes(y = P), color = "red") +
+          geom_line(aes(y = R), color = "blue") +
+          geom_line(aes(y = C), color = "purple") +
+          theme_bw() +
+          ggtitle(paste(tran[i,"nutrient"], tran[i, "mechanisms"], sep = ", ")))
 }
-tran2
+dev.off()
+tranP
+
+
+#### RPV only model ####
+
+Sinit = Ntot - 1
+Pinit = 0
+Rinit = 1
+Ninit = Sinit + Pinit + Rinit + Cinit
+
+# create columns
+tranR <- expand_grid(tran, time_dat) %>%
+  mutate(virus = "RPV",
+         S = NA,
+         P = NA,
+         R = NA,
+         C = NA)
+
+# add output to each parameter set
+pdf("./output/prevalence_ode_rpv_simulations.pdf")
+for(i in 1:nrow(tran)){
+  
+  mod <- simmod(tran[i, ])
+  
+  tranR[(simtime*(i-1) + 1):(simtime*i), c('S','P', 'R', 'C')] <- mod[ , c('S','P', 'R', 'C')]
+  
+  print(ggplot(mod, aes(x = time)) +
+          geom_line(aes(y = S), color = "black") +
+          geom_line(aes(y = P), color = "red") +
+          geom_line(aes(y = R), color = "blue") +
+          geom_line(aes(y = C), color = "purple") +
+          theme_bw() +
+          ggtitle(paste(tran[i,"nutrient"], tran[i, "mechanisms"], sep = ", ")))
+}
+dev.off()
+tranR
+
+
+#### PAV and RPV model ####
+
+Sinit = Ntot - 2
+Pinit = 1
+Rinit = 1
+Ninit = Sinit + Pinit + Rinit + Cinit
+
+# create columns
+tranC <- expand_grid(tran, time_dat) %>%
+  mutate(virus = "both",
+         S = NA,
+         P = NA,
+         R = NA,
+         C = NA)
+
+# add output to each parameter set
+pdf("./output/prevalence_ode_coinfection_simulations.pdf")
+for(i in 1:nrow(tran)){
+  
+  mod <- simmod(tran[i, ])
+  
+  tranC[(simtime*(i-1) + 1):(simtime*i), c('S','P', 'R', 'C')] <- mod[ , c('S','P', 'R', 'C')]
+  
+  print(ggplot(mod, aes(x = time)) +
+          geom_line(aes(y = S), color = "black") +
+          geom_line(aes(y = P), color = "red") +
+          geom_line(aes(y = R), color = "blue") +
+          geom_line(aes(y = C), color = "purple") +
+          theme_bw() +
+          ggtitle(paste(tran[i,"nutrient"], tran[i, "mechanisms"], sep = ", ")))
+}
+dev.off()
+tranC
 
 
 #### format data ####
 
-prev <- tran2 %>%
-  mutate(PAV = P + C,
-         RPV = R + C) %>%
-  select(mechanisms, nutrient, interactions, PAV, RPV, C) %>%
-  gather(key = "state", value = "count", -c(mechanisms, nutrient, interactions)) %>%
-  mutate(prev = count / Ninit,
-         state = recode(state, C = "Coinfected")) %>%
-  mutate(mechanisms = fct_relevel(mechanisms, "density", "non-density"),
+# data for comparing simulations with one or two viruses
+prev_virus <- full_join(tranP, tranR) %>%
+  full_join(tranC) %>%
+  mutate(PAV = (P + C) / Ntot,
+         RPV = (R + C) / Ntot) %>%
+  select(mechanisms, virus, nutrient, time, PAV, RPV) %>%
+  gather(key = infection, value = prev, -c(mechanisms, virus, nutrient, time)) %>%
+  filter(!(virus == "PAV" & infection == "RPV") & !(virus == "RPV" & infection == "PAV")) %>%
+  mutate(virus = recode(virus, PAV = "single", RPV = "single")) %>%
+  spread(key = virus, value = prev) %>% 
+  mutate(diff = both - single,
+         time = time * trans_time,
          nutrient = fct_relevel(nutrient, "low", "N", "P"),
-         state = fct_relevel(state, "PAV", "RPV"))
+         mechanisms = recode(mechanisms, all = "all mechanisms", density = "density-dependent", "non-density" = "density-independent"))
 
 
 #### figure settings ####
@@ -145,31 +209,46 @@ shape_pal = c(21, 22, 24)
 sm_txt = 6
 lg_txt = 8
 
-# base figure
-base_theme <- theme_bw() +
+
+#### figure ####
+
+# text
+text_dat <- tibble(mechanisms = rep(unique(prev_virus$mechanisms), each = 2),
+                   infection = rep(c("PAV", "RPV"), 3),
+                   text = letters[1:6]) %>%
+  mutate(time = 0,
+         diff = 0.16)
+
+# effects of virus interactions on prevalence
+simfig <- ggplot(prev_virus, aes(x = time, y = diff)) +
+  geom_hline(yintercept = 0, color = 'gray', linetype = "dashed") +
+  geom_line(aes(color = nutrient)) +
+  geom_text(data = text_dat, aes(label = text), size = 3) +
+  facet_grid(mechanisms ~ infection) +
+  theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
         plot.title = element_text(color = "black", size = lg_txt, hjust= 0.5),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.text = element_text(color = "black", size = sm_txt),
+        strip.text = element_text(color = "black", size = lg_txt),
         strip.background = element_blank(),
         panel.spacing = unit(0, "lines"),
-        legend.position = "none")
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = "black", size = lg_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.background = element_blank(),
+        legend.key = element_rect(color = "white", size = 0.5),
+        legend.key.size = unit(1.5, "lines"),
+        legend.key.width = unit(1, "cm"),
+        legend.spacing.x = unit(0.001, "mm"),
+        legend.justification = c(0.5, 0.5),
+        legend.box.margin = margin(-10, -10, -10, -10)) +
+  scale_color_manual(values = col_pal, name = "Nutrient") +
+  xlab("Days") +
+  ylab("Effect of among-virus interactions on infection prevalence")
 
-
-#### figure ####
-
-ggplot(prev, aes(x = nutrient, y = prev)) +
-  geom_point(aes(fill = nutrient, shape = state), size = 3) +
-  facet_grid(interactions ~ mechanisms) +
-  base_theme +
-  scale_fill_manual(values = col_pal, name = "Nutrient") +
-  scale_shape_manual(values = shape_pal, name = "Infection") +
-  theme(legend.position = "bottom",
-        legend.direction = "horizontal") +
-  guides(fill = guide_legend(override.aes = list(shape = 21)))
-
-# coinfection is high with N addition because both viruses do well with N addition. This is driven by non-density-dependent mechanisms
-# among-virus interactions have minimal effects on infection prevalence
-# compare values to lit
+pdf("./output/figure_4_simulation.pdf", width = 6, height = 5)
+simfig
+dev.off()

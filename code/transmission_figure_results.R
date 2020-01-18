@@ -375,15 +375,41 @@ prevfun_den <- function(dat){
 # transmission function
 transfun <- function(dat, density_only){
   
+  # calculate prevalence
   ifelse(density_only == 0, dat2 <- prevfun(dat), dat2 <- prevfun_den(dat))
   
+  # spread by infection type
+  # calculate q parameter
   dat3 <- dat2 %>% 
     select(inoculation, nutrient, nutrient_t, prev) %>%
-    group_by(inoculation, nutrient, nutrient_t) %>% 
+    arrange(inoculation, nutrient, nutrient_t) %>%
+    mutate(count = rep(1:nrow(postp), nrow(avgp_conc_s))) %>%
+    spread(key = inoculation, value = prev) %>%
+    mutate(q = co / single,
+           B = single) 
+  
+  # take mean and 95% CI for B
+  dat_B <- dat3 %>%
+    select(nutrient, nutrient_t, B) %>%
+    group_by(nutrient, nutrient_t) %>% 
     mean_hdi() %>%
-    ungroup()
+    ungroup() %>%
+    rename(value = B) %>%
+    mutate(parameter = "B")
+  
+  # take mean and 95% CI for q
+  dat_q <- dat3 %>%
+    select(nutrient, nutrient_t, q) %>%
+    group_by(nutrient, nutrient_t) %>% 
+    mean_hdi() %>%
+    ungroup() %>%
+    rename(value = q) %>%
+    mutate(parameter = "q")
+  
+  # combine outputs
+  dat4 <- full_join(dat_B, dat_q)
 
-  return(dat3)
+  return(dat4)
 }
 
 # apply to parameters
@@ -414,13 +440,6 @@ rpv_trans <- full_join(rpv_trans_den, rpv_trans_non) %>%
   full_join(rpv_trans_all) %>%
   mutate(mechanisms = fct_relevel(mechanisms, "density", "non-density"))
 
-# figure
-plot_pTra %+% pav_trans +
-  facet_grid(mechanisms ~ nutrient_t, switch = "x")
-
-plot_rTra %+% rpv_trans +
-  facet_grid(mechanisms ~ nutrient_t, switch = "x")
-
 # subset for same nutrient values
 pav_trans_same <- pav_trans %>%
   filter(nutrient == nutrient_t)
@@ -428,20 +447,24 @@ pav_trans_same <- pav_trans %>%
 rpv_trans_same <- rpv_trans %>%
   filter(nutrient == nutrient_t)
 
-# figure
-plot_pTra %+% pav_trans_same %+%
-  aes(x = nutrient_t, y = prev) %+%
-  facet_wrap(~mechanisms, nrow = 1) %+%
+# figure (check against transmission figure)
+ggplot(pav_trans_same, aes(x = nutrient, y = value)) +
+  geom_pointinterval(aes(shape = parameter,  color = nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
+  scale_shape_manual(values = shape_pal) +
+  scale_color_manual(values = col_pal) +
+  facet_wrap(~mechanisms, nrow = 3) +
   base_theme +
-  xlab("Recipient plant nutrient") +
-  ylab("Est. PAV transmission")
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal")
 
-plot_rTra %+% rpv_trans_same %+%
-  aes(x = nutrient_t, y = prev) %+%
-  facet_wrap(~mechanisms, nrow = 1) %+%
+ggplot(rpv_trans_same, aes(x = nutrient, y = value)) +
+  geom_pointinterval(aes(shape = parameter,  color = nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
+  scale_shape_manual(values = shape_pal) +
+  scale_color_manual(values = col_pal) +
+  facet_wrap(~mechanisms, nrow = 3) +
   base_theme +
-  xlab("Recipient plant nutrient") +
-  ylab("Est. RPV transmission")
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal")
 
 # save data
 write_csv(pav_trans_same, "./output/pav_transmission_values_same_nuts.csv")
