@@ -197,6 +197,12 @@ prev_virus <- full_join(tranP, tranR) %>%
          nutrient = fct_relevel(nutrient, "low", "N", "P"),
          mechanisms = recode(mechanisms, all = "all mechanisms", density = "density-dependent", "non-density" = "density-independent"))
 
+# data for looking at raw prevalence instead of diff
+raw_prev_virus <- prev_virus %>%
+  select(-diff) %>%
+  rename(virus = infection) %>%
+  gather(key = "infection", value = "prevalence", -c(mechanisms:virus))
+
 
 #### figure settings ####
 
@@ -210,7 +216,7 @@ sm_txt = 6
 lg_txt = 8
 
 
-#### figure ####
+#### figures ####
 
 # text
 text_dat <- tibble(mechanisms = rep(unique(prev_virus$mechanisms), each = 2),
@@ -251,4 +257,43 @@ simfig <- ggplot(prev_virus, aes(x = time, y = diff)) +
 
 pdf("./output/figure_4_simulation.pdf", width = 6, height = 5)
 simfig
+dev.off()
+
+# text for raw data
+raw_text_dat <- tibble(virus = c("PAV", "RPV"),
+                   text = letters[1:2]) %>%
+  mutate(time = 0,
+         prevalence = 1)
+
+# raw prevalence values
+rawfig <- ggplot(filter(raw_prev_virus, mechanisms == "all mechanisms" & infection == "both"), aes(x = time, y = prevalence)) +
+  geom_line(aes(color = nutrient), alpha = 0.7) +
+  geom_text(data = raw_text_dat, aes(label = text), size = 3) +
+  facet_wrap(~virus) +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = lg_txt),
+        axis.text = element_text(color = "black", size = sm_txt),
+        plot.title = element_text(color = "black", size = lg_txt, hjust= 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(color = "black", size = lg_txt),
+        strip.background = element_blank(),
+        panel.spacing = unit(0, "lines"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = "black", size = lg_txt),
+        legend.text = element_text(color = "black", size = sm_txt),
+        legend.background = element_blank(),
+        legend.key = element_rect(color = "white", size = 0.5),
+        legend.key.size = unit(1.5, "lines"),
+        legend.key.width = unit(1, "cm"),
+        legend.spacing.x = unit(0.001, "mm"),
+        legend.justification = c(0.5, 0.5),
+        legend.box.margin = margin(-10, -10, -10, -10)) +
+  scale_color_manual(values = col_pal, name = "Nutrient") +
+  xlab("Days") +
+  ylab("Predicted infection prevalence")
+
+pdf("./output/figure_S4_simulation.pdf", width = 4, height = 2.5)
+rawfig
 dev.off()

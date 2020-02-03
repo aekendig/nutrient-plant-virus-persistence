@@ -107,6 +107,7 @@ percfun <- function(dat){
     select(-c(inoculation, nutrient, nutrient_t)) %>%
     spread(key = treatment, value = prev) %>%
     transmute(co_low_N = co_low_N - single_low_N,
+              co_low_P = co_low_P - single_low_P,
               co_low_b = `co_low_N+P` - `single_low_N+P`,
               N_low = single_N_low - single_low_low,
               low_N = single_low_N - single_low_low,
@@ -121,6 +122,7 @@ percfun <- function(dat){
 } 
 
 percp <- percfun(combp %>% mutate(conc_s = 0))
+percp_all <- percfun(combp)
 percr <- percfun(combr %>% mutate(conc_s = 0))
 percr_all <- percfun(combr)
 
@@ -347,6 +349,7 @@ tab_model(mpcii)
 summary(mpcii)
 prior_summary(mpcii)
 percp
+percp_all
 
 tab_model(mrcii)
 summary(mrcii)
