@@ -325,7 +325,7 @@ plot_all <- cowplot::plot_grid(concplots, leg,
                                nrow = 2)
 
 
-pdf("./output/figure_3_transmission.pdf", height = 8.5, width = 6)
+pdf("./output/figure_2_transmission.pdf", height = 7, width = 6)
 plot_all
 dev.off()
 

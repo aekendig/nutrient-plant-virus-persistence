@@ -195,7 +195,7 @@ prev_virus <- full_join(tranP, tranR) %>%
   mutate(diff = both - single,
          time = time * trans_time,
          nutrient = fct_relevel(nutrient, "low", "N", "P"),
-         mechanisms = recode(mechanisms, all = "all mechanisms", density = "density-dependent", "non-density" = "density-independent"))
+         mechanisms = recode(mechanisms, all = "all processes", density = "density-dependent", "non-density" = "density-independent"))
 
 # data for looking at raw prevalence instead of diff
 raw_prev_virus <- prev_virus %>%
@@ -255,7 +255,7 @@ simfig <- ggplot(prev_virus, aes(x = time, y = diff)) +
   xlab("Days") +
   ylab("Effect of among-virus interactions on infection prevalence")
 
-pdf("./output/figure_4_simulation.pdf", width = 6, height = 5)
+pdf("./output/figure_3_simulation.pdf", width = 6, height = 5)
 simfig
 dev.off()
 
@@ -266,7 +266,7 @@ raw_text_dat <- tibble(virus = c("PAV", "RPV"),
          prevalence = 1)
 
 # raw prevalence values
-rawfig <- ggplot(filter(raw_prev_virus, mechanisms == "all mechanisms" & infection == "both"), aes(x = time, y = prevalence)) +
+rawfig <- ggplot(filter(raw_prev_virus, mechanisms == "all processes" & infection == "both"), aes(x = time, y = prevalence)) +
   geom_line(aes(color = nutrient), alpha = 0.7) +
   geom_text(data = raw_text_dat, aes(label = text), size = 3) +
   facet_wrap(~virus) +
