@@ -195,7 +195,7 @@ prev_virus <- full_join(tranP, tranR) %>%
   mutate(diff = both - single,
          time = time * trans_time,
          nutrient = fct_relevel(nutrient, "low", "N", "P"),
-         mechanisms = recode(mechanisms, all = "all processes", density = "density-dependent", "non-density" = "density-independent"))
+         mechanisms = recode(mechanisms, all = "all processes", density = "virus\ndensity-dependent", "non-density" = "virus\ndensity-independent"))
 
 # data for looking at raw prevalence instead of diff
 raw_prev_virus <- prev_virus %>%
