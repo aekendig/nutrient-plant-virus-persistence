@@ -125,13 +125,13 @@ percfun_prev <- function(dat){
            count = rep(1:nrow(postpi), nrow(trt))) %>%
     select(-c(inoculation, nutrient)) %>%
     spread(key = treatment, value = prev) %>%
-    transmute(high_N = single_N - single_low,
-              high_P = single_P - single_low,
-              high_NP = `single_N+P` - single_low,
-              low_co = co_low - single_low,
-              N_co = co_N - single_N,
-              P_co = co_P - single_P,
-              NP_co = `co_N+P` - `single_N+P`)%>%
+    transmute(high_N = (single_N - single_low)/single_low,
+              high_P = (single_P - single_low)/single_low,
+              high_NP = (`single_N+P` - single_low)/single_low,
+              low_co = (co_low - single_low)/single_low,
+              N_co = (co_N - single_N)/single_N,
+              P_co = (co_P - single_P)/single_P,
+              NP_co = (`co_N+P` - `single_N+P`)/`single_N+P`)%>%
     gather(key = "treatment", value = "perc") %>%
     mutate(inoculation = ifelse(grepl("co", treatment, fixed = T), "co", "single"),
            inoculation = factor(inoculation, levels = c("single", "co")),

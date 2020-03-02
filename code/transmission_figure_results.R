@@ -106,12 +106,12 @@ percfun <- function(dat){
            count = rep(1:nrow(postp), nrow(avgp_conc_s))) %>%
     select(-c(inoculation, nutrient, nutrient_t)) %>%
     spread(key = treatment, value = prev) %>%
-    transmute(co_low_N = co_low_N - single_low_N,
-              co_low_P = co_low_P - single_low_P,
-              co_low_b = `co_low_N+P` - `single_low_N+P`,
-              N_low = single_N_low - single_low_low,
-              low_N = single_low_N - single_low_low,
-              co_N_low = co_N_low - single_N_low) %>%
+    transmute(co_low_N = (co_low_N - single_low_N)/single_low_N,
+              co_low_P = (co_low_P - single_low_P)/single_low_P,
+              co_low_b = (`co_low_N+P` - `single_low_N+P`)/`single_low_N+P`,
+              N_low = (single_N_low - single_low_low)/single_low_low,
+              low_N = (single_low_N - single_low_low)/single_low_low,
+              co_N_low = (co_N_low - single_N_low)/single_N_low) %>%
     gather(key = "treatment", value = "perc") %>%
     as_tibble() %>%
     group_by(treatment) %>%
