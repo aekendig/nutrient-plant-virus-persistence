@@ -54,8 +54,9 @@ pd2 <- pd %>%
   left_join(st) %>%
   group_by(Run, SampleName, TargetName, PAVmin) %>%
   summarise(tech_cycle = mean(Ct, na.rm = T),
-            quant = mean(Quantity_Adj, na.rm = T) / 2.5) %>%
+            quant = mean(Quantity_Adj, na.rm = T)) %>%
   mutate(quant_adj = ifelse(quant < PAVmin | is.na(quant), 0, quant),
+         quant_ul = quant_adj / 2.5,
          nutrient = case_when(grepl("Ctrl", SampleName, fixed = T) == T ~ "Ctrl",
                               grepl("NPPAV", SampleName, fixed = T) == T | grepl("PAVNP", SampleName, fixed = T) == T | grepl("PAVRPVNP", SampleName, fixed = T) == T ~ "NP",
                               grepl("NPAV", SampleName, fixed = T) == T | grepl("PAVN", SampleName, fixed = T) == T | grepl("PAVRPVN", SampleName, fixed = T) == T ~ "N", 
@@ -81,8 +82,9 @@ rd2 <- rd %>%
   left_join(st) %>%
   group_by(Run, SampleName, TargetName, RPVmin) %>%
   summarise(tech_cycle = mean(Ct, na.rm = T),
-            quant = mean(Quantity_Adj, na.rm = T) / 2.5) %>%
+            quant = mean(Quantity_Adj, na.rm = T)) %>%
   mutate(quant_adj = ifelse(quant < RPVmin | is.na(quant), 0, quant),
+         quant_ul = quant_adj  / 2.5,
          nutrient = case_when(grepl("Ctrl", SampleName, fixed = T) == T ~ "Ctrl",
                               grepl("NPRPV", SampleName, fixed = T) == T | grepl("RPVNP", SampleName, fixed = T) == T | grepl("PAVRPVNP", SampleName, fixed = T) == T | grepl("NPPAV", SampleName, fixed = T) == T ~ "NP",
                               grepl("NRPV", SampleName, fixed = T) == T | grepl("RPVN", SampleName, fixed = T) == T | grepl("PAVRPVN", SampleName, fixed = T) == T | grepl("NPAV", SampleName, fixed = T) == T ~ "N", 
@@ -104,8 +106,8 @@ sum(is.na(rd2$Extraction.WetWeighTaken.mg.S1))
 # select values with quantities 
 # calculate concentration and add columns
 p.d <- pd2 %>%
-  filter(quant_adj > 0) %>%
-  mutate(conc = quant_adj / Extraction.WetWeighTaken.mg.S1,
+  filter(quant_ul > 0) %>%
+  mutate(conc = quant_ul * 50 / Extraction.WetWeighTaken.mg.S1,
          log_conc = log(conc),
          co = ifelse(inoc == "PAVRPV", 1, 0),
          high_N = ifelse(nutrient == "N" | nutrient == "NP", 1, 0),
@@ -113,8 +115,8 @@ p.d <- pd2 %>%
 write_csv(p.d, "./output/lacroix_output/lacroix_concentration_pav_data.csv")
 
 r.d <- rd2 %>%
-  filter(quant_adj > 0) %>%
-  mutate(conc = quant_adj / Extraction.WetWeighTaken.mg.S1,
+  filter(quant_ul > 0) %>%
+  mutate(conc = quant_ul * 50 / Extraction.WetWeighTaken.mg.S1,
          log_conc = log(conc),
          co = ifelse(inoc == "PAVRPV", 1, 0),
          high_N = ifelse(nutrient == "N" | nutrient == "NP", 1, 0),
@@ -128,59 +130,44 @@ p.d %>%
   ggplot(aes(x = nutrient, y = log_conc, colour = inoc)) +
   stat_summary(fun.y = mean, geom = "point", position = position_dodge(0.4)) +
   stat_summary(fun.data = mean_se, geom = "errorbar", position = position_dodge(0.4), width = 0.1)
-# can compare N and control for single infection
+# can compare all nutrients for single infection
 # can compare coinfection and single infection for N
+
+p.d %>%
+  group_by(inoc, nutrient) %>%
+  summarise(n = n())
 
 r.d %>%
   ggplot(aes(x = nutrient, y = log_conc, colour = inoc)) +
   stat_summary(fun.y = mean, geom = "point", position = position_dodge(0.4)) +
   stat_summary(fun.data = mean_se, geom = "errorbar", position = position_dodge(0.4), width = 0.1)
 # can compare all nutrients for single infection
-# can compare coinfection and single infection for ctrl, N, N+P
+# can compare coinfection and single infection for all nutrients
+
+r.d %>%
+  group_by(inoc, nutrient) %>%
+  summarise(n = n())
 
 
 #### analyze treatments ####
 
-# PAV N model
-m.n.p <- brm(data = filter(p.d, inoc == "PAV" & high_P == 0), family = gaussian,
-              log_conc ~ high_N,
+# subset PAV data
+p.d.mod <- p.d %>%
+  filter(!(inoc == "PAVRPV" & nutrient %in% c("Ctrl", "NP")))
+
+# PAV model
+m.p <- brm(data = p.d.mod, family = gaussian,
+              log_conc ~ high_N * high_P + co,
               prior <- c(prior(normal(0, 100), class = Intercept),
                          prior(normal(0, 10), class = b)),
               iter = 6000, warmup = 1000, chains = 3, cores = 2,
              control = list(adapt_delta = 0.99))
-plot(m.n.p)
-summary(m.n.p)
-save(m.n.p, file = "./output/lacroix_output/lacroix_concentration_n_pav.rda")
+plot(m.p)
+summary(m.p)
+save(m.p, file = "./output/lacroix_output/lacroix_concentration_pav.rda")
 
-# PAV co model
-m.c.p <- brm(data = filter(p.d, nutrient == "N"), family = gaussian,
-             log_conc ~ co,
-             prior <- c(prior(normal(0, 100), class = Intercept),
-                        prior(normal(0, 10), class = b)),
-             iter = 6000, warmup = 1000, chains = 3, cores = 2,
-             control = list(adapt_delta = 0.99))
-plot(m.c.p)
-summary(m.c.p)
-save(m.c.p, file = "./output/lacroix_output/lacroix_concentration_co_pav.rda")
-
-# RPV nutrient model
-m.n.r <- brm(data = filter(r.d, inoc == "RPV"), family = gaussian,
-             log_conc ~ high_N * high_P,
-             prior <- c(prior(normal(0, 100), class = Intercept),
-                        prior(normal(0, 10), class = b)),
-             iter = 6000, warmup = 1000, chains = 3, cores = 2,
-             control = list(adapt_delta = 0.99))
-plot(m.n.r)
-summary(m.n.r)
-save(m.n.r, file = "./output/lacroix_output/lacroix_concentration_n_rpv.rda")
-
-# RPV coinfection model
-m.c.r <- brm(data = filter(r.d, high_P == 0), family = gaussian,
-             log_conc ~ co * high_N,
-             prior <- c(prior(normal(0, 100), class = Intercept),
-                        prior(normal(0, 10), class = b)),
-             iter = 6000, warmup = 1000, chains = 3, cores = 2,
-             control = list(adapt_delta = 0.99))
-plot(m.c.r)
-summary(m.c.r)
-save(m.c.r, file = "./output/lacroix_output/lacroix_concentration_co_rpv.rda")
+# RPV model
+m.r <- update(m.p, log_conc ~ co * high_N * high_P, newdata = r.d)
+plot(m.r)
+summary(m.r)
+save(m.r, file = "./output/lacroix_output/lacroix_concentration_rpv.rda")

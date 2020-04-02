@@ -219,18 +219,18 @@ lg_txt = 8
 #### figures ####
 
 # text
-text_dat <- tibble(mechanisms = rep(unique(prev_virus$mechanisms), each = 2),
-                   infection = rep(c("PAV", "RPV"), 3),
+text_dat <- tibble(mechanisms = rep(unique(prev_virus$mechanisms), 2),
+                   infection = rep(c("PAV", "RPV"), each = 3),
                    text = letters[1:6]) %>%
   mutate(time = 0,
-         diff = 0.16)
+         diff = rep(c(0.63, 0.16), each = 3))
 
 # effects of virus interactions on prevalence
 simfig <- ggplot(prev_virus, aes(x = time, y = diff)) +
   geom_hline(yintercept = 0, color = 'gray', linetype = "dashed") +
   geom_line(aes(color = nutrient)) +
   geom_text(data = text_dat, aes(label = text), size = 3) +
-  facet_grid(mechanisms ~ infection) +
+  facet_grid(infection ~ mechanisms, scales = "free_y") +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
@@ -255,7 +255,7 @@ simfig <- ggplot(prev_virus, aes(x = time, y = diff)) +
   xlab("Days") +
   ylab("Effect of among-virus interactions on infection prevalence")
 
-pdf("./output/figure_3_simulation.pdf", width = 6, height = 5)
+pdf("./output/figure_4_simulation.pdf", width = 6, height = 4)
 simfig
 dev.off()
 

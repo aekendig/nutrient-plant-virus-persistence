@@ -280,7 +280,7 @@ plot_all <- cowplot::plot_grid(plots, leg,
                                nrow = 2)
 
 # print
-pdf("./output/figure_1_infection_density.pdf", width = 6, height = 7)
+pdf("./output/figure_2_infection_density.pdf", width = 6, height = 7)
 plot_all
 dev.off()
 

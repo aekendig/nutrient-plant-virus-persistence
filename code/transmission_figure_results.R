@@ -106,12 +106,18 @@ percfun <- function(dat){
            count = rep(1:nrow(postp), nrow(avgp_conc_s))) %>%
     select(-c(inoculation, nutrient, nutrient_t)) %>%
     spread(key = treatment, value = prev) %>%
-    transmute(co_low_N = (co_low_N - single_low_N)/single_low_N,
-              co_low_P = (co_low_P - single_low_P)/single_low_P,
-              co_low_b = (`co_low_N+P` - `single_low_N+P`)/`single_low_N+P`,
+    transmute(P_low = (single_P_low - single_low_low)/single_low_low,
               N_low = (single_N_low - single_low_low)/single_low_low,
+              b_low = (`single_N+P_low` - single_low_low)/single_low_low,
+              low_P = (single_low_P - single_low_low)/single_low_low,
               low_N = (single_low_N - single_low_low)/single_low_low,
-              co_N_low = (co_N_low - single_N_low)/single_N_low) %>%
+              low_b = (`single_low_N+P` - single_low_low)/single_low_low,
+              co_P_low = (co_P_low - single_P_low)/single_P_low,
+              co_N_low = (co_N_low - single_N_low)/single_N_low,
+              co_b_low = (`co_N+P_low` - `single_N+P_low`)/`single_N+P_low`,
+              co_low_P = (co_low_P - single_low_P)/single_low_P,
+              co_low_N = (co_low_N - single_low_N)/single_low_N,
+              co_low_b = (`co_low_N+P` - `single_low_N+P`)/`single_low_N+P`) %>%
     gather(key = "treatment", value = "perc") %>%
     as_tibble() %>%
     group_by(treatment) %>%
@@ -325,7 +331,7 @@ plot_all <- cowplot::plot_grid(concplots, leg,
                                nrow = 2)
 
 
-pdf("./output/figure_2_transmission.pdf", height = 7, width = 6)
+pdf("./output/figure_3_transmission.pdf", height = 7, width = 6)
 plot_all
 dev.off()
 
@@ -450,7 +456,7 @@ pav_trans_same <- pav_trans %>%
 rpv_trans_same <- rpv_trans %>%
   filter(nutrient == nutrient_t)
 
-# figure (check against transmission figure)
+# figure (check against transmission figure - note that q is co/single)
 ggplot(pav_trans_same, aes(x = nutrient, y = value)) +
   geom_pointinterval(aes(shape = parameter,  color = nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
   scale_shape_manual(values = shape_pal) +

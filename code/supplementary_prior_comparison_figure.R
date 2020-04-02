@@ -17,10 +17,10 @@ load("./output/concentration_analysis_informative_rpv.rda")
 load("./output/concentration_analysis_uninformative_pav.rda")
 load("./output/concentration_analysis_uninformative_rpv.rda")
 
-load("./output/transmission_pav_up_concentration.rda")
-load("./output/transmission_rpv_up_concentration.rda")
-load("./output/transmission_pav_up_concentration_informative.rda")
-load("./output/transmission_rpv_up_concentration_informative.rda")
+load("./output/transmission_pav_up_concentration_interaction_uninformative.rda")
+load("./output/transmission_rpv_up_concentration_interaction_uninformative.rda")
+load("./output/transmission_pav_up_concentration_interaction_informative.rda")
+load("./output/transmission_rpv_up_concentration_interaction_informative.rda")
 
 # color palette
 col_pal = c("black", "darkgoldenrod2", "dodgerblue1", "palegreen4")
@@ -38,16 +38,16 @@ postcpu <- posterior_samples(m.lu.p)
 postcri <- posterior_samples(m.li.r)
 postcpi <- posterior_samples(m.li.p)
 
-posttru <- posterior_samples(mruc)
-posttpu <- posterior_samples(mpuc)
-posttri <- posterior_samples(mruci)
-posttpi <- posterior_samples(mpuci)
+posttru <- posterior_samples(mrciu)
+posttpu <- posterior_samples(mpciu)
+posttri <- posterior_samples(mrcii)
+posttpi <- posterior_samples(mpcii)
 
 
 # rename columns
 colnames(postcru) <- colnames(postcpu) <- colnames(postcri) <- colnames(postcpi) <- c("int", "co", "N", "P", "co_N", "co_P", "NP", "co_NP", "ar", "sigma", "lp")
 
-colnames(posttru) <- colnames(posttpu) <- colnames(posttri) <- colnames(posttpi) <- c("int", "conc", "co", "N", "P", "N_t", "P_t", "NP", "NP_t", "co_N", "co_P", "co_N_t", "co_P_t", "co_NP", "co_NP_t", "sd_round", "sd_time", "round_1", "round_2", "round_3", "round_4", "time_1", "time_2", "time_3", "time_4", "time_5", "time_6", "time_7", "time_8", "lp")
+colnames(posttru) <- colnames(posttpu) <- colnames(posttri) <- colnames(posttpi) <- c("int", "conc", "N", "P", "N_t", "P_t", "co", "NP", "NP_t", "conc_N", "conc_P", "conc_N_t", "conc_P_t", "co_N", "co_P", "co_N_t", "co_P_t", "conc_NP", "conc_NP_t", "co_NP", "co_NP_t", "sd_round", "sd_time", "round_1", "round_2", "round_3", "round_4", "time_1", "time_2", "time_3", "time_4", "time_5", "time_6", "time_7", "time_8", "lp")
 
 # category average
 
@@ -341,8 +341,7 @@ pcpu <- avgcpu %>%
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
   ylab("Est. ln(PAV density)") +
-  ggtitle("Uninformative") +
-  ylim(4.5, 6.6)
+  ggtitle("Uninformative")
 
 pcpi <- avgcpi %>%
   group_by(treatment, Nutrient, Inoculation) %>%
@@ -366,8 +365,7 @@ pcpi <- avgcpi %>%
         legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  ggtitle("Informative") +
-  ylim(4.5, 6.6)
+  ggtitle("Informative")
 
 pcru <- avgcru %>%
   group_by(treatment, Nutrient, Inoculation) %>%
@@ -389,8 +387,7 @@ pcru <- avgcru %>%
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21)) +
   ylab("Est. ln(RPV density)") +
-  xlab("Nutrient") +
-  ylim(6.9, 9)
+  xlab("Nutrient")
 
 pcri <- avgcri %>%
   mutate(Inoculation = recode(Inoculation, coinfection = "co")) %>%
@@ -415,8 +412,7 @@ pcri <- avgcri %>%
         legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), name = "Inoculation") +
-  xlab("Nutrient") +
-  ylim(6.9, 9)
+  xlab("Nutrient")
 
 ptpu <- avgtpu %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
@@ -442,8 +438,7 @@ ptpu <- avgtpu %>%
         panel.spacing = unit(0, "lines")) +
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  ylab("Est. PAV transmission") +
-  ylim(0.16, 1)
+  ylab("Est. PAV transmission") 
 
 ptpi <- avgtpi %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
@@ -467,8 +462,7 @@ ptpi <- avgtpi %>%
         strip.background = element_blank(),
         panel.spacing = unit(0, "lines")) +
   scale_colour_manual(values = col_pal, guide = F) +
-  scale_shape_manual(values = c(19, 21), guide = F) +
-  ylim(0.16, 1)
+  scale_shape_manual(values = c(19, 21), guide = F) 
 
 ptru <- avgtru %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
@@ -495,8 +489,7 @@ ptru <- avgtru %>%
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
   ylab("Est. RPV transmission") +
-  xlab("Receiving plant nutrient") +
-  ylim(0, 1)
+  xlab("Receiving plant nutrient") 
 
 ptri <- avgtri %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
@@ -522,8 +515,7 @@ ptri <- avgtri %>%
         panel.spacing = unit(0, "lines")) +
   scale_colour_manual(values = col_pal, guide = F) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  xlab("Receiving plant nutrient") +
-  ylim(0, 1)
+  xlab("Receiving plant nutrient") 
 
 
 #### combine plots ####

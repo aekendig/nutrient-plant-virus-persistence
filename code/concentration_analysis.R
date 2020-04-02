@@ -18,10 +18,8 @@ library(bayesplot) # version used: 1.6.0
 sdat <- read_csv("./data/sample_exp_molc_data.csv")
 
 # load models for priors
-# load("./output/lacroix_output/lacroix_concentration_n_pav.rda")
-# load("./output/lacroix_output/lacroix_concentration_co_pav.rda")
-# load("./output/lacroix_output/lacroix_concentration_n_rpv.rda")
-# load("./output/lacroix_output/lacroix_concentration_co_rpv.rda")
+# load("./output/lacroix_output/lacroix_concentration_pav.rda")
+# load("./output/lacroix_output/lacroix_concentration_rpv.rda")
 
 
 #### edit data ####
@@ -182,6 +180,8 @@ dat4 <- dat3 %>%
                           target == "RPV" & quant < RPVmin ~ 0,
                           is.na(quant) ~ 0,
                           TRUE ~ quant),
+    quant_ul = case_when(q_group %in% c("01","02") ~ quant_adj / 2.5,
+                         TRUE ~ quant_adj / 7),
     quant_zero = case_when(quant_adj == 0 ~ 1,
                            TRUE ~ 0)) %>%
   ungroup()
@@ -196,7 +196,7 @@ dups <-dat4 %>%
 
 dups %>%
   left_join(dat4) %>%
-  select(sample, target, quant_adj) %>%
+  select(sample, target, quant_ul) %>%
   data.frame() 
 # all are zero's - combine samples if needed
 
@@ -205,7 +205,7 @@ dups %>%
 
 # look at mean values
 dat4 %>%
-  ggplot(aes(x = dpi, y = quant_adj)) + 
+  ggplot(aes(x = dpi, y = quant_ul)) + 
   stat_summary(data = filter(dat4, quant_zero == 0), fun.data = "mean_se") +
   stat_summary(data = filter(dat4, quant_zero == 0), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat4, quant_zero == 1), color = "blue", alpha = 0.5) + 
@@ -213,7 +213,7 @@ dat4 %>%
 
 # look at mean values by nutrient - PAV
 dat4 %>%
-  ggplot(aes(x = dpi, y = quant_adj)) + 
+  ggplot(aes(x = dpi, y = quant_ul)) + 
   stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV"), fun.data = "mean_se") +
   stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV"), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat4, quant_zero == 1 & target == "PAV"), color = "blue", alpha = 0.5) + 
@@ -221,7 +221,7 @@ dat4 %>%
 
 # look at PAV in coinfection
 dat4 %>%
-  ggplot(aes(x = dpi, y = quant_adj)) + 
+  ggplot(aes(x = dpi, y = quant_ul)) + 
   stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se") +
   stat_summary(data = filter(dat4, quant_zero == 0 & target == "PAV" & inoc == "coinfection"), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat4, quant_zero == 1 & target == "PAV" & inoc == "coinfection"), color = "blue", alpha = 0.5) + 
@@ -230,14 +230,14 @@ dat4 %>%
 # look at mean values by nutrient - log-transformed PAV
 dat4 %>%
   filter(quant_zero == 0 & target == "PAV" & !(inoc %in% c("healthy", "RPV"))) %>%
-  ggplot(aes(x = dpi, y = log(quant_adj))) + 
+  ggplot(aes(x = dpi, y = log(quant_ul))) + 
   stat_summary(fun.data = "mean_se") +
   stat_summary(fun.data = "mean_se", geom = "line") +
   facet_grid(inoc ~ nutrient, scales = "free")
 
 # look at mean values by nutrient - RPV
 dat4 %>%
-  ggplot(aes(x = dpi, y = quant_adj)) + 
+  ggplot(aes(x = dpi, y = quant_ul)) + 
   stat_summary(data = filter(dat4, quant_zero == 0 & target == "RPV"), fun.data = "mean_se") +
   stat_summary(data = filter(dat4, quant_zero == 0 & target == "RPV"), fun.data = "mean_se", geom = "line") +
   geom_point(data = filter(dat4, quant_zero == 1 & target == "RPV"), color = "blue", alpha = 0.5) + 
@@ -246,7 +246,7 @@ dat4 %>%
 # look at mean values by nutrient - log-transformed RPV
 dat4 %>%
   filter(quant_zero == 0 & target == "RPV" & !(inoc %in% c("healthy", "PAV"))) %>%
-  ggplot(aes(x = dpi, y = log(quant_adj))) + 
+  ggplot(aes(x = dpi, y = log(quant_ul))) + 
   stat_summary(fun.data = "mean_se") +
   stat_summary(fun.data = "mean_se", geom = "line") +
   facet_grid(inoc ~ nutrient, scales = "free")
@@ -260,10 +260,10 @@ d.at <- dat4 %>%
   filter(quant_zero == 0 &
            inoc %in% c("PAV", "coinfection", "RPV")) %>%
   mutate(co = ifelse(inoc == "coinfection", 1, 0),
-         log_quant = log(quant_adj),
-         conc = quant_adj/mass_ext_mg,
+         log_quant = log(quant_ul),
+         conc = quant_ul * 50 / mass_ext_mg,
          log_conc = log(conc),
-         quant_rd = round(quant_adj))
+         quant_rd = round(quant_ul))
 
 # concentration values
 d.at %>%
@@ -351,10 +351,9 @@ m.lu.p <- brm(data = d.at.p, family = gaussian,
                          prior(normal(0, 1), class = b)),
               iter = 6000, warmup = 1000, chains = 3, cores = 2)
 
-# inspect model
 summary(m.lu.p) # coinfection increases concentration
 plot(m.lu.p) # convergence among chains
-plot(marginal_effects(m.lu.p), points = T)
+# plot(marginal_effects(m.lu.p), points = T)
 pp_check(m.lu.p, nsamples = 100) # model distributions slightly higher
 
 # save model
@@ -366,7 +365,7 @@ m.lu.r <- update(m.lu.p, newdata = d.at.r)
 # inspect model
 summary(m.lu.r) # no strong effects
 plot(m.lu.r) # convergence among chains
-plot(marginal_effects(m.lu.r), points = T)
+# plot(marginal_effects(m.lu.r), points = T)
 pp_check(m.lu.r, nsamples = 100) # pretty close
 
 # save model
@@ -382,43 +381,40 @@ mean(d.at.r$quant_rd)
 var(d.at.r$quant_rd) # much larger variance
 
 # PAV model (you can't currently implement autoregressive models, time included as a random effect)
-m.cu.p <- brm(data = d.at.p, family = negbinomial(),
-              quant_rd ~ offset(mass_ext_mg) + co * high_N * high_P + (1|time),
-              prior <- c(prior(normal(460, 100), class = Intercept),
-                         prior(normal(0, 1), class = b)),
-              iter = 6000, warmup = 1000, chains = 1, cores = 1,
-              control = list(adapt_delta = 0.99))
-
-# inspect model
-summary(m.cu.p)
-yrep.cu.p <- posterior_predict(m.cu.p, draws = 100)
-ppc_dens_overlay(log(d.at.p$quant_rd), log(yrep.cu.p)) # not a very good fit
-
-# RPV model
-m.cu.r <- update(m.cu.p, newdata = d.at.r)
-
-# inspect model
-summary(m.cu.r) # positive effect of P
-yrep.cu.r <- posterior_predict(m.cu.r, draws = 100)
-ppc_dens_overlay(log(d.at.r$quant_rd), log(yrep.cu.r)) # not a very good fit
+# m.cu.p <- brm(data = d.at.p, family = negbinomial(),
+#               quant_rd ~ offset(mass_ext_mg) + co * high_N * high_P + (1|time),
+#               prior <- c(prior(normal(460, 100), class = Intercept),
+#                          prior(normal(0, 1), class = b)),
+#               iter = 6000, warmup = 1000, chains = 1, cores = 1,
+#               control = list(adapt_delta = 0.99))
+# 
+# # inspect model
+# summary(m.cu.p)
+# yrep.cu.p <- posterior_predict(m.cu.p, draws = 100)
+# ppc_dens_overlay(log(d.at.p$quant_rd), log(yrep.cu.p)) # not a very good fit
+# 
+# # RPV model
+# m.cu.r <- update(m.cu.p, newdata = d.at.r)
+# 
+# # inspect model
+# summary(m.cu.r) # positive effect of P
+# yrep.cu.r <- posterior_predict(m.cu.r, draws = 100)
+# ppc_dens_overlay(log(d.at.r$quant_rd), log(yrep.cu.r)) # not a very good fit
 
 
 #### log-transformed models, specific priors ####
 
-# use the estimates for coinfection and N addition from CL's models
-
 # PAV model
-# summary(m.c.p) # mean = 0.53, se = 1.29
-# summary(m.n.p) # mean = -0.48, se = 0.52
+# summary(m.p)
 m.li.p <- brm(data = d.at.p, family = gaussian,
               log_conc ~ co * high_N * high_P,
               autocor = cor_ar(~time),
-              prior = c(prior(normal(0.53, 1.29), class = b, coef = co),
-                        prior(normal(-0.48, 0.52), class = b, coef = high_N),
-                        prior(normal(0, 1), class = b, coef = high_P),
+              prior = c(prior(normal(0.25, 0.73), class = b, coef = co),
+                        prior(normal(0.08, 0.76), class = b, coef = high_N),
+                        prior(normal(-0.19, 0.83), class = b, coef = high_P),
                         prior(normal(0, 1), class = b, coef = co:high_N),
                         prior(normal(0, 1), class = b, coef = co:high_P),
-                        prior(normal(0, 1), class = b, coef = high_N:high_P),
+                        prior(normal(0.17, 1.06), class = b, coef = high_N:high_P),
                         prior(normal(0, 1), class = b, coef = co:high_N:high_P),
                         prior(normal(0, 10), class = Intercept)),
               iter = 6000, warmup = 1000, chains = 3, cores = 2)
@@ -429,21 +425,20 @@ save(m.li.p, file = "./output/concentration_analysis_informative_pav.rda")
 # inspect model
 summary(m.li.p) # didn't change estimates too much
 plot(m.li.p) # convergence among chains
-plot(marginal_effects(m.li.p), points = T)
+# plot(marginal_effects(m.li.p), points = T)
 pp_check(m.li.p, nsamples = 100) # model distributions slightly higher, similar to model with uninformative priors
 
 # RPV model
-# summary(m.c.r)
-# summary(m.n.r)
+# summary(m.r)
 m.li.r <- update(m.li.p,
                  newdata = d.at.r,
-                  prior = c(prior(normal(-0.33, 0.70), class = b, coef = co),
-                            prior(normal(-0.19, 0.61), class = b, coef = high_N),
-                            prior(normal(0.84, 0.74), class = b, coef = high_P),
-                            prior(normal(-0.57, 0.89), class = b, coef = co:high_N),
-                            prior(normal(0, 1), class = b, coef = co:high_P),
-                            prior(normal(-0.30, 0.88), class = b, coef = high_N:high_P),
-                            prior(normal(0, 1), class = b, coef = co:high_N:high_P),
+                  prior = c(prior(normal(-0.35, 0.66), class = b, coef = co),
+                            prior(normal(-0.21, 0.58), class = b, coef = high_N),
+                            prior(normal(0.79, 0.97), class = b, coef = high_P),
+                            prior(normal(-0.54, 0.84), class = b, coef = co:high_N),
+                            prior(normal(-1.22, 1.39), class = b, coef = co:high_P),
+                            prior(normal(-0.26, 1.15), class = b, coef = high_N:high_P),
+                            prior(normal(0.74, 1.61), class = b, coef = co:high_N:high_P),
                             prior(normal(0, 10), class = Intercept)))
 
 # save model
@@ -452,62 +447,62 @@ save(m.li.r, file = "./output/concentration_analysis_informative_rpv.rda")
 # inspect model
 summary(m.li.r) # similar estimates to uninformative priors, tighter confidence intervals
 plot(m.li.r) # convergence among chains
-plot(marginal_effects(m.li.r), points = T)
+# plot(marginal_effects(m.li.r), points = T)
 pp_check(m.li.r, nsamples = 100) # similar to uninformative priors
 
 
-#### log-transformed models, uninformative priors, late dpi ####
-
-# subset data
-d.at.p.sub <- d.at.p %>% filter(dpi > 10)
-d.at.r.sub <- d.at.r %>% filter(dpi > 10)
-
-# PAV model
-m.lud.p <- update(m.lu.p, newdata = d.at.p.sub)
-
-# save model
-save(m.lud.p, file = "./output/concentration_analysis_uninformative_late_pav.rda")
-
-# inspect model
-summary(m.lud.p) # similar estimates to full dataset
-plot(m.lud.p)
-pp_check(m.lud.p, nsamples = 100) # estimates a little high
-
-# RPV model
-m.lud.r <- update(m.lu.r, newdata = d.at.r.sub)
-
-# save model
-save(m.lud.r, file = "./output/concentration_analysis_uninformative_late_rpv.rda")
-
-# inspect model
-summary(m.lud.r)  # similar estimates to full dataset
-plot(m.lud.r)
-pp_check(m.lud.r, nsamples = 100) 
-
-
-#### log-transformed models, specific priors, late dpi ####
-
-# PAV model
-m.lid.p <- update(m.li.p, newdata = d.at.p.sub)
-
-# save model
-save(m.lid.p, file = "./output/concentration_analysis_informative_late_pav.rda")
-
-# inspect model
-summary(m.lid.p) # similar estimates to uninformed
-plot(m.lid.p)
-pp_check(m.lid.p, nsamples = 100) # same issue as uninformed
-
-# RPV model
-m.lid.r <- update(m.li.r, newdata = d.at.r.sub)
-
-# save model
-save(m.lid.r, file = "./output/concentration_analysis_informative_late_rpv.rda")
-
-# inspect model
-summary(m.lid.r) # similar estimates to uninformed
-plot(m.lid.r)
-pp_check(m.lid.r, nsamples = 100) 
+# #### log-transformed models, uninformative priors, late dpi ####
+# 
+# # subset data
+# d.at.p.sub <- d.at.p %>% filter(dpi > 10)
+# d.at.r.sub <- d.at.r %>% filter(dpi > 10)
+# 
+# # PAV model
+# m.lud.p <- update(m.lu.p, newdata = d.at.p.sub)
+# 
+# # save model
+# save(m.lud.p, file = "./output/concentration_analysis_uninformative_late_pav.rda")
+# 
+# # inspect model
+# summary(m.lud.p) # similar estimates to full dataset
+# plot(m.lud.p)
+# pp_check(m.lud.p, nsamples = 100) # estimates a little high
+# 
+# # RPV model
+# m.lud.r <- update(m.lu.r, newdata = d.at.r.sub)
+# 
+# # save model
+# save(m.lud.r, file = "./output/concentration_analysis_uninformative_late_rpv.rda")
+# 
+# # inspect model
+# summary(m.lud.r)  # similar estimates to full dataset
+# plot(m.lud.r)
+# pp_check(m.lud.r, nsamples = 100) 
+# 
+# 
+# #### log-transformed models, specific priors, late dpi ####
+# 
+# # PAV model
+# m.lid.p <- update(m.li.p, newdata = d.at.p.sub)
+# 
+# # save model
+# save(m.lid.p, file = "./output/concentration_analysis_informative_late_pav.rda")
+# 
+# # inspect model
+# summary(m.lid.p) # similar estimates to uninformed
+# plot(m.lid.p)
+# pp_check(m.lid.p, nsamples = 100) # same issue as uninformed
+# 
+# # RPV model
+# m.lid.r <- update(m.li.r, newdata = d.at.r.sub)
+# 
+# # save model
+# save(m.lid.r, file = "./output/concentration_analysis_informative_late_rpv.rda")
+# 
+# # inspect model
+# summary(m.lid.r) # similar estimates to uninformed
+# plot(m.lid.r)
+# pp_check(m.lid.r, nsamples = 100) 
 
 
 #### save data for plotting ####
