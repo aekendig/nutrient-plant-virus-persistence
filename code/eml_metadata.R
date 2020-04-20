@@ -1,5 +1,9 @@
 ## Goal: create EML metadata for project using the Environmental Data Initiative's EML Assembly Line (https://github.com/EDIorg/EMLassemblyline)
 
+# Put data and code in a folder together to be grabbed by make_eml
+# Generate metadata files by editing current ones or generating them (see Github page for tutorial)
+# Edit and run this script
+
 
 #### set up ####
 
@@ -80,13 +84,21 @@ dlist <- list.files(path = "./data",
 
 dlist
 
+# description list
 ddlist <- NA
 
 ddlist[1] <- "comments about controls and standards for each qPCR group"
-ddlist[2] <- "sample experiment molecular data - includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants"
+ddlist[2] <- "includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants"
 ddlist[3] <- "chlorophyll measurements for source plants"
 ddlist[4] <- "qPCR data for source plants"
 ddlist[5] <- "experimental treatments and molecular analysis information for receiving plants in transmission trials"
+
+# name list
+dnlist <- c("Comments for qPCR", 
+            "Source plant experimental and molecular data", 
+            "Source plant chlorophyll data", 
+            "Source plant qPCR data", 
+            "Receiving plant experimental and molecular data")
 
 # print table
 # dtable <- data.frame(data = dlist, description = ddlist)
@@ -100,41 +112,46 @@ clist <- list.files(path = "./code",
                     pattern = ".R")
 
 # remove the eml codes
-clist <- clist[-5]
+clist <- clist[-2]
 
 # code descripions
 cdlist <- c(
-  "code to create figure of correlation between PAV and RPV in coinfection",
   "code to analyze density of viruses within source plants",
-  "code to create figure of treatment effects on virus density",
-  "code to to create figure of the relationship between virus density and transmission",
-  "code to analyze infection status of source plants",
-  "code to derive priors for virus density analysis",
-  "code to derive priors for transmission analysis",
+  "code to analyze establishment of viruses within source plants",
+  "code to create figure of treatment effects on virus establishment and density",
+  "code for mathematical model and figures",
   "code to process raw qPCR data files",
-  "code to create supplementary figure of treatment effects on infection status",
   "code to create supplementary figure of comparison between models with and without priors",
-  "code to create supplementary figure of comparison between models with full and truncated datasets",
   "code to analyze transmission",
   "code to create figure of treatment effects on transmission"
 )
 
+# name list
+cnlist <- c("Virus density analysis", 
+            "Virus establishment analysis", 
+            "Figures for virus density and establishment",
+            "Mathematical model of disease spread",
+            "Processing of raw qPCR data",
+            "Supplementary figure comparing models",
+            "Transmission analysis",
+            "Figures for transmission")
+
 # print table
-ctable <- data.frame(code = clist, desription = cdlist)
-kable(ctable)
+# ctable <- data.frame(code = clist, desription = cdlist)
+# kable(ctable)
 
 
 #### make eml ####
-
-# manually synced files between Github repository and nutrients_plant_viruses_edi (shift+z) on Google Drive
 
 make_eml(path = "./metadata",
          data.path = "../nutrients_plant_viruses_edi",
          dataset.title = "Soil nitrogen and phosphorus effects on plant virus density, transmission, and species interactions",
          data.table = dlist,
+         data.table.name = dnlist,
          data.table.description = ddlist,
          data.table.quote.character = rep("\"", length(dlist)),
          other.entity = clist,
+         other.entity.name = cnlist,
          other.entity.description = cdlist,
          temporal.coverage = c("2014-02-10", "2014-08-01"),
          geographic.description = "St. Paul, MN, USA",
@@ -142,12 +159,12 @@ make_eml(path = "./metadata",
          maintenance.description = "completed", 
          user.id = "aekendig",
          user.domain = "EDI",
-         package.id = "edi.411.1")
+         package.id = "edi.411.2")
 
 
 #### check warnings ####
 
-eml <- EML::read_eml("./metadata/edi.411.1.xml")
+eml <- EML::read_eml("./metadata/edi.411.2.xml")
 EML::eml_validate(eml)
 
 

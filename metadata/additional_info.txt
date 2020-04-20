@@ -1,3 +1,3 @@
-This dataset is associated with the manuscript Host nutrient supply mediates facilitation and competition between plant viruses by Kendig et al., submitted to Ecology.
+This dataset is associated with the manuscript Host nutrition mediates interactions between plant viruses, altering transmission and predicted disease spread by Kendig et al., submitted to Ecology.
 
 R script outputs can be found here: https://github.com/aekendig/nutrients-plant-viruses

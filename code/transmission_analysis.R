@@ -584,6 +584,7 @@ save(mpcii, file = "./output/transmission_pav_up_concentration_interaction_infor
 
 summary(mpcii)
 plot(mpcii)
+pp_check(mpcii, nsamples = 100)
 
 # RPV model
 # summary(mr)
@@ -617,6 +618,7 @@ save(mrcii, file = "./output/transmission_rpv_up_concentration_interaction_infor
 
 summary(mrcii)
 plot(mrcii)
+pp_check(mrcii, nsamples = 100)
 
 
 #### models with concentration interactions and uinformative priors ####
@@ -633,6 +635,7 @@ save(mpciu, file = "./output/transmission_pav_up_concentration_interaction_uninf
 
 summary(mpciu)
 plot(mpciu)
+pp_check(mpciu, nsamples = 100)
 
 # RPV model
 mrciu <- update(mpciu, newdata = datr2)
@@ -640,7 +643,7 @@ save(mrciu, file = "./output/transmission_rpv_up_concentration_interaction_uninf
 
 summary(mrciu)
 plot(mrciu)
-
+pp_check(mrciu, nsamples = 100)
 
 #### save data for plotting ####
 

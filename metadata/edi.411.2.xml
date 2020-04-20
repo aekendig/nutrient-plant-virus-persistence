@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<eml:eml xmlns:eml="eml://ecoinformatics.org/eml-2.1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.1" packageId="edi.411.1" xsi:schemaLocation="eml://ecoinformatics.org/eml-2.1.1  http://nis.lternet.edu/schemas/EML/eml-2.1.1/eml.xsd" system="edi">
+<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="edi.411.2" xsi:schemaLocation="eml://ecoinformatics.org/eml-2.2.0  https://nis.lternet.edu/schemas/EML/eml-2.2.0/xsd/eml.xsd" system="edi">
   <access authSystem="https://pasta.edirepository.org/authentication" order="allowFirst" scope="document">
     <allow>
       <principal>uid=aekendig,o=EDI,dc=edirepository,dc=org</principal>
@@ -60,7 +60,7 @@
       <electronicMailAddress>seabloom@umn.edu</electronicMailAddress>
       <userId directory="https://orcid.org">https://orcid.org/0000-0001-6780-9259</userId>
     </creator>
-    <pubDate>2019-09-13</pubDate>
+    <pubDate>2020-04-20</pubDate>
     <abstract>
       <para>
   This data package includes data and code from an experiment testing
@@ -89,9 +89,9 @@
     </keywordSet>
     <additionalInfo>
       <para>
-  This dataset is associated with the manuscript Host nutrient supply
-  mediates facilitation and competition between plant viruses by Kendig
-  et al., submitted to Ecology.
+  This dataset is associated with the manuscript Host nutrition mediates
+  interactions between plant viruses, altering transmission and
+  predicted disease spread by Kendig et al., submitted to Ecology.
 </para>
       <para>
   R script outputs can be found here:
@@ -274,20 +274,20 @@
   transmission to receiving plants, we fit Bayesian generalized linear
   models to data for each virus species using the brms package (Bürkner
   2017). Virus density was modeled with a Gaussian distribution and
-  formatted as ln(density) ~ coinfection * N addition * P addition,
-  where coinfection, N addition, and P addition were binary variables (0
-  or 1, applies to all other models). Harvesting day was included as a
-  first-order autocorrelation structure (cor_ar function). Source plant
-  infection was modeled with a Bernoulli distribution (logit-link) and
-  formatted as infection ~ coinfection * N addition * P addition.
-  Harvesting day was included as a random effect because autocorrelation
-  structures were not compatible with this family of models.
-  Transmission was also modeled with a Bernoulli distribution
-  (logit-link) and formatted as transmission ~ density + coinfection *
-  (Nsource * Psource + Nreceiving * Preceiving), where the subscripts
-  indicate which plant the nutrient treatment was applied to, and
-  density was centered and scaled. Harvesting day and experimental block
-  were included as crossed random effects. We used data from a previous
+  formatted as ln(density) ~ coinoculation * N addition * P addition,
+  where coinoculation, N addition, and P addition were binary variables.
+  Harvesting day was included as a first-order autocorrelation structure
+  (cor_ar function). Source plant infection was modeled with a Bernoulli
+  distribution (logit-link) and formatted as infection ~ coinoculation *
+  N addition * P addition. Harvesting day was included as a random
+  effect because autocorrelation structures were not compatible with
+  this family of models. Transmission was also modeled with a Bernoulli
+  distribution (logit-link) and formatted as transmission ~ density *
+  (Nsource * Psource + Nreceiving * Preceiving) + coinfection * (Nsource
+  * Psource + Nreceiving * Preceiving), where the subscripts indicate
+  which plant the nutrient treatment was applied to, and density was
+  centered and scaled. Harvesting day and experimental block were
+  included as crossed random effects. We used data from a previous
   experiment that measured PAV and RPV densities and transmission under
   almost identical laboratory conditions to inform the priors for the
   density and transmission models (Lacroix et al. 2017). All models were
@@ -324,7 +324,7 @@
         <userId directory="https://orcid.org">https://orcid.org/0000-0003-2259-5853</userId>
         <role>Principal Investigator</role>
       </personnel>
-      <funding>NSF: DEB-1015805</funding>
+      <funding>NSF DEB-1015805</funding>
       <relatedProject>
         <title>No project title to report</title>
         <personnel>
@@ -338,11 +338,11 @@
           <userId directory="https://orcid.org">https://orcid.org/0000-0001-6780-9259</userId>
           <role>Principal Investigator</role>
         </personnel>
-        <funding>NSF: DEB-1015805</funding>
+        <funding>NSF DEB-1015805</funding>
       </relatedProject>
     </project>
     <dataTable>
-      <entityName>comments about controls and standards for each qPCR group</entityName>
+      <entityName>Comments for qPCR</entityName>
       <entityDescription>comments about controls and standards for each qPCR group</entityDescription>
       <physical>
         <objectName>qPCR_group_comments.csv</objectName>
@@ -442,8 +442,8 @@
       <numberOfRecords>44</numberOfRecords>
     </dataTable>
     <dataTable>
-      <entityName>sample experiment molecular data - includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants</entityName>
-      <entityDescription>sample experiment molecular data - includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants</entityDescription>
+      <entityName>Source plant experimental and molecular data</entityName>
+      <entityDescription>includes experimental treatments, measurements taken during harvesting, and molecular analysis information for source plants</entityDescription>
       <physical>
         <objectName>sample_exp_molc_data.csv</objectName>
         <size unit="bytes">140716</size>
@@ -679,8 +679,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.02</minimum>
-                  <maximum exclusive="false">0.97</maximum>
+                  <minimum exclusive="false">0.0235</minimum>
+                  <maximum exclusive="false">0.968</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -703,7 +703,7 @@
                 <numberType>real</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
-                  <maximum exclusive="false">0.21</maximum>
+                  <maximum exclusive="false">0.208</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -725,8 +725,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">100.16</minimum>
-                  <maximum exclusive="false">4439.52</maximum>
+                  <minimum exclusive="false">100.158</minimum>
+                  <maximum exclusive="false">4439.516</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -749,7 +749,7 @@
                 <numberType>real</numberType>
                 <bounds>
                   <minimum exclusive="false">56</minimum>
-                  <maximum exclusive="false">2761.42</maximum>
+                  <maximum exclusive="false">2761.417</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -769,7 +769,7 @@
                 <standardUnit>dimensionless</standardUnit>
               </unit>
               <numericDomain>
-                <numberType>real</numberType>
+                <numberType>whole</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
                   <maximum exclusive="false">5</maximum>
@@ -794,8 +794,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.02</minimum>
-                  <maximum exclusive="false">0.97</maximum>
+                  <minimum exclusive="false">0.0235</minimum>
+                  <maximum exclusive="false">0.968</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -818,7 +818,7 @@
                 <numberType>real</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
-                  <maximum exclusive="false">0.3</maximum>
+                  <maximum exclusive="false">0.2958</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -838,7 +838,7 @@
                 <standardUnit>dimensionless</standardUnit>
               </unit>
               <numericDomain>
-                <numberType>real</numberType>
+                <numberType>whole</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
                   <maximum exclusive="false">3</maximum>
@@ -861,7 +861,7 @@
                 <standardUnit>dimensionless</standardUnit>
               </unit>
               <numericDomain>
-                <numberType>real</numberType>
+                <numberType>whole</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
                   <maximum exclusive="false">3</maximum>
@@ -884,7 +884,7 @@
                 <standardUnit>dimensionless</standardUnit>
               </unit>
               <numericDomain>
-                <numberType>real</numberType>
+                <numberType>whole</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
                   <maximum exclusive="false">3</maximum>
@@ -907,7 +907,7 @@
                 <standardUnit>dimensionless</standardUnit>
               </unit>
               <numericDomain>
-                <numberType>real</numberType>
+                <numberType>whole</numberType>
                 <bounds>
                   <minimum exclusive="false">0</minimum>
                   <maximum exclusive="false">3</maximum>
@@ -948,7 +948,7 @@
                 <standardUnit>dimensionless</standardUnit>
               </unit>
               <numericDomain>
-                <numberType>real</numberType>
+                <numberType>natural</numberType>
                 <bounds>
                   <minimum exclusive="false">1</minimum>
                   <maximum exclusive="false">22</maximum>
@@ -1166,7 +1166,7 @@
       <numberOfRecords>720</numberOfRecords>
     </dataTable>
     <dataTable>
-      <entityName>chlorophyll measurements for source plants</entityName>
+      <entityName>Source plant chlorophyll data</entityName>
       <entityDescription>chlorophyll measurements for source plants</entityDescription>
       <physical>
         <objectName>source_plant_chlorophyll_data.csv</objectName>
@@ -1347,7 +1347,7 @@
       <numberOfRecords>1920</numberOfRecords>
     </dataTable>
     <dataTable>
-      <entityName>qPCR data for source plants</entityName>
+      <entityName>Source plant qPCR data</entityName>
       <entityDescription>qPCR data for source plants</entityDescription>
       <physical>
         <objectName>source_plant_qPCR_data.csv</objectName>
@@ -1533,8 +1533,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">17.1</minimum>
-                  <maximum exclusive="false">53.59</maximum>
+                  <minimum exclusive="false">17.10435295</minimum>
+                  <maximum exclusive="false">53.59302902</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -1556,8 +1556,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">17.1</minimum>
-                  <maximum exclusive="false">52.64</maximum>
+                  <minimum exclusive="false">17.10435295</minimum>
+                  <maximum exclusive="false">52.64407349</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -1579,8 +1579,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.01</minimum>
-                  <maximum exclusive="false">9.74</maximum>
+                  <minimum exclusive="false">0.005068395</minimum>
+                  <maximum exclusive="false">9.741675377</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -1602,7 +1602,7 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.04</minimum>
+                  <minimum exclusive="false">0.041080073</minimum>
                   <maximum exclusive="false">21620545536</maximum>
                 </bounds>
               </numericDomain>
@@ -1625,7 +1625,7 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.04</minimum>
+                  <minimum exclusive="false">0.041080073</minimum>
                   <maximum exclusive="false">21620545536</maximum>
                 </bounds>
               </numericDomain>
@@ -1648,7 +1648,7 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.84</minimum>
+                  <minimum exclusive="false">0.839604855</minimum>
                   <maximum exclusive="false">598042752</maximum>
                 </bounds>
               </numericDomain>
@@ -1692,8 +1692,8 @@
               <numericDomain>
                 <numberType>real</numberType>
                 <bounds>
-                  <minimum exclusive="false">0.01</minimum>
-                  <maximum exclusive="false">0.09</maximum>
+                  <minimum exclusive="false">0.012234218</minimum>
+                  <maximum exclusive="false">0.094069857</maximum>
                 </bounds>
               </numericDomain>
             </ratio>
@@ -1924,7 +1924,7 @@
       <numberOfRecords>5218</numberOfRecords>
     </dataTable>
     <dataTable>
-      <entityName>experimental treatments and molecular analysis information for receiving plants in transmission trials</entityName>
+      <entityName>Receiving plant experimental and molecular data</entityName>
       <entityDescription>experimental treatments and molecular analysis information for receiving plants in transmission trials</entityDescription>
       <physical>
         <objectName>transmission_data.csv</objectName>
@@ -2293,27 +2293,12 @@
       <numberOfRecords>1102</numberOfRecords>
     </dataTable>
     <otherEntity>
-      <entityName>code to create figure of correlation between PAV and RPV in coinfection</entityName>
-      <entityDescription>code to create figure of correlation between PAV and RPV in coinfection</entityDescription>
-      <physical>
-        <objectName>coinfection_correlation_figure.R</objectName>
-        <size unit="bytes">1499</size>
-        <authentication method="MD5">9de8dadfdc40565895e63c32d738ee97</authentication>
-        <dataFormat>
-          <externallyDefinedFormat>
-            <formatName>unknown</formatName>
-          </externallyDefinedFormat>
-        </dataFormat>
-      </physical>
-      <entityType>unknown</entityType>
-    </otherEntity>
-    <otherEntity>
-      <entityName>code to analyze density of viruses within source plants</entityName>
+      <entityName>Virus density analysis</entityName>
       <entityDescription>code to analyze density of viruses within source plants</entityDescription>
       <physical>
         <objectName>concentration_analysis.R</objectName>
-        <size unit="bytes">19095</size>
-        <authentication method="MD5">69c546b9cb0ce20bac9040f17d6f6558</authentication>
+        <size unit="bytes">19418</size>
+        <authentication method="MD5">fe0a214339ea227cf7b7936f6a2e8beb</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
@@ -2323,42 +2308,12 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to create figure of treatment effects on virus density</entityName>
-      <entityDescription>code to create figure of treatment effects on virus density</entityDescription>
-      <physical>
-        <objectName>concentration_figure_results.R</objectName>
-        <size unit="bytes">11241</size>
-        <authentication method="MD5">e4900a247c531bdb816e0a1640988afb</authentication>
-        <dataFormat>
-          <externallyDefinedFormat>
-            <formatName>unknown</formatName>
-          </externallyDefinedFormat>
-        </dataFormat>
-      </physical>
-      <entityType>unknown</entityType>
-    </otherEntity>
-    <otherEntity>
-      <entityName>code to to create figure of the relationship between virus density and transmission</entityName>
-      <entityDescription>code to to create figure of the relationship between virus density and transmission</entityDescription>
-      <physical>
-        <objectName>concentration_transmission_figure.R</objectName>
-        <size unit="bytes">4891</size>
-        <authentication method="MD5">a56840ce280e64a0fa287458cd09c661</authentication>
-        <dataFormat>
-          <externallyDefinedFormat>
-            <formatName>unknown</formatName>
-          </externallyDefinedFormat>
-        </dataFormat>
-      </physical>
-      <entityType>unknown</entityType>
-    </otherEntity>
-    <otherEntity>
-      <entityName>code to analyze infection status of source plants</entityName>
-      <entityDescription>code to analyze infection status of source plants</entityDescription>
+      <entityName>Virus establishment analysis</entityName>
+      <entityDescription>code to analyze establishment of viruses within source plants</entityDescription>
       <physical>
         <objectName>infection_analysis.R</objectName>
-        <size unit="bytes">4951</size>
-        <authentication method="MD5">3b1f5283f308b16ace673faa34ace3a6</authentication>
+        <size unit="bytes">5629</size>
+        <authentication method="MD5">33d929a869de5e7f16a52fca392f1425</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
@@ -2368,12 +2323,12 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to derive priors for virus density analysis</entityName>
-      <entityDescription>code to derive priors for virus density analysis</entityDescription>
+      <entityName>Figures for virus density and establishment</entityName>
+      <entityDescription>code to create figure of treatment effects on virus establishment and density</entityDescription>
       <physical>
-        <objectName>lacroix_concentration_priors.R</objectName>
-        <size unit="bytes">8121</size>
-        <authentication method="MD5">710501b90662fe7776cc38130d907fe5</authentication>
+        <objectName>infection_concentration_figure_results.R</objectName>
+        <size unit="bytes">10220</size>
+        <authentication method="MD5">67f05c7ef4afc173326066bd90044bda</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
@@ -2383,12 +2338,12 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to derive priors for transmission analysis</entityName>
-      <entityDescription>code to derive priors for transmission analysis</entityDescription>
+      <entityName>Mathematical model of disease spread</entityName>
+      <entityDescription>code for mathematical model and figures</entityDescription>
       <physical>
-        <objectName>lacroix_transmission_priors.R</objectName>
-        <size unit="bytes">4392</size>
-        <authentication method="MD5">1128c1030ed787af23fad295bd3bd316</authentication>
+        <objectName>prevalence_ode_model.R</objectName>
+        <size unit="bytes">9265</size>
+        <authentication method="MD5">2e3366736aa7b5cb29879c82dd83d71a</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
@@ -2398,7 +2353,7 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to process raw qPCR data files</entityName>
+      <entityName>Processing of raw qPCR data</entityName>
       <entityDescription>code to process raw qPCR data files</entityDescription>
       <physical>
         <objectName>qPCR_raw_data_processing.R</objectName>
@@ -2413,27 +2368,12 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to create supplementary figure of treatment effects on infection status</entityName>
-      <entityDescription>code to create supplementary figure of treatment effects on infection status</entityDescription>
-      <physical>
-        <objectName>supplementary_infection_figure_results.R</objectName>
-        <size unit="bytes">10189</size>
-        <authentication method="MD5">2672a96335f243896e5ad6b80f423ef2</authentication>
-        <dataFormat>
-          <externallyDefinedFormat>
-            <formatName>unknown</formatName>
-          </externallyDefinedFormat>
-        </dataFormat>
-      </physical>
-      <entityType>unknown</entityType>
-    </otherEntity>
-    <otherEntity>
-      <entityName>code to create supplementary figure of comparison between models with and without priors</entityName>
+      <entityName>Supplementary figure comparing models</entityName>
       <entityDescription>code to create supplementary figure of comparison between models with and without priors</entityDescription>
       <physical>
         <objectName>supplementary_prior_comparison_figure.R</objectName>
-        <size unit="bytes">32520</size>
-        <authentication method="MD5">897f8af5c768394aefeca76bd0734e3b</authentication>
+        <size unit="bytes">32532</size>
+        <authentication method="MD5">bc8d5605787fd51ca77a256c8d71f02d</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
@@ -2443,27 +2383,12 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to create supplementary figure of comparison between models with full and truncated datasets</entityName>
-      <entityDescription>code to create supplementary figure of comparison between models with full and truncated datasets</entityDescription>
-      <physical>
-        <objectName>supplementary_truncated_dataset_figure.R</objectName>
-        <size unit="bytes">9963</size>
-        <authentication method="MD5">6beee5e2ccaf0ecb14c24cbfd3f8cd7a</authentication>
-        <dataFormat>
-          <externallyDefinedFormat>
-            <formatName>unknown</formatName>
-          </externallyDefinedFormat>
-        </dataFormat>
-      </physical>
-      <entityType>unknown</entityType>
-    </otherEntity>
-    <otherEntity>
-      <entityName>code to analyze transmission</entityName>
+      <entityName>Transmission analysis</entityName>
       <entityDescription>code to analyze transmission</entityDescription>
       <physical>
         <objectName>transmission_analysis.R</objectName>
-        <size unit="bytes">16787</size>
-        <authentication method="MD5">613e6da35acf71b79cd845db1b66abda</authentication>
+        <size unit="bytes">24977</size>
+        <authentication method="MD5">f452223682095145a16f22d8182bd4ac</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
@@ -2473,12 +2398,12 @@
       <entityType>unknown</entityType>
     </otherEntity>
     <otherEntity>
-      <entityName>code to create figure of treatment effects on transmission</entityName>
+      <entityName>Figures for transmission</entityName>
       <entityDescription>code to create figure of treatment effects on transmission</entityDescription>
       <physical>
         <objectName>transmission_figure_results.R</objectName>
-        <size unit="bytes">19414</size>
-        <authentication method="MD5">457303df0f38e2d768cf63fc2aa121de</authentication>
+        <size unit="bytes">17469</size>
+        <authentication method="MD5">1bcdbdfa1db34b8b8c5d106b3f998384</authentication>
         <dataFormat>
           <externallyDefinedFormat>
             <formatName>unknown</formatName>
