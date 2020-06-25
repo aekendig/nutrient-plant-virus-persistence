@@ -322,7 +322,7 @@ pcpu <- avgcpu %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
-  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
+  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, interval_size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
   theme_bw() +
   theme(axis.title.y = element_text(color = "black", size = lg_txt),
         axis.title.x = element_blank(),
@@ -341,14 +341,14 @@ pcpu <- avgcpu %>%
   scale_shape_manual(values = c(19, 21)) +
   xlab("Nutrient") +
   ylab("Est. ln(PAV density)") +
-  ggtitle("Uninformative")
+  ggtitle("General priors")
 
 pcpi <- avgcpi %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
   geom_point(aes(shape = Inoculation), position = position_dodge(0.3)) +
-  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
+  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, interval_size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
   theme_bw() +
   theme(axis.title = element_blank(),
         axis.text = element_text(color = "black", size = sm_txt),
@@ -365,13 +365,13 @@ pcpi <- avgcpi %>%
         legend.key.size = unit(0.7, 'lines')) +
   scale_colour_manual(values = col_pal) +
   scale_shape_manual(values = c(19, 21), guide = F) +
-  ggtitle("Informative")
+  ggtitle("Lacroix et al. 2017 priors")
 
 pcru <- avgcru %>%
   group_by(treatment, Nutrient, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
-  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
+  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, interval_size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = lg_txt),
         axis.text = element_text(color = "black", size = sm_txt),
@@ -395,7 +395,7 @@ pcri <- avgcri %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect,  color = Nutrient)) +
   geom_point(aes(shape = Inoculation), position = position_dodge(0.3)) +
-  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
+  geom_pointinterval(aes(shape = Inoculation), fatten_point = 2.5, interval_size_range = c(0.4, 0.6), position = position_dodge(0.3), fill = "white", show.legend = F) +
   theme_bw() +
   theme(axis.title.x = element_text(color = "black", size = lg_txt),
         axis.title.y = element_blank(),
@@ -418,7 +418,7 @@ ptpu <- avgtpu %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect)) +
-  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
+  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, interval_size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
   facet_wrap(~Nutrient_t, nrow = 1, strip.position = "bottom") +
   theme_bw() +
   theme(axis.title.y = element_text(color = "black", size = lg_txt),
@@ -444,7 +444,7 @@ ptpi <- avgtpi %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect)) +
-  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
+  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, interval_size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
   facet_wrap(~Nutrient_t, nrow = 1, strip.position = "bottom") +
   theme_bw() +
   theme(axis.title = element_blank(),
@@ -468,7 +468,7 @@ ptru <- avgtru %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect)) +
-  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
+  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, interval_size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
   facet_wrap(~Nutrient_t, nrow = 1, strip.position = "bottom") +
   theme_bw() +
   theme(axis.title.x = element_text(color = "black", size = lg_txt),
@@ -495,7 +495,7 @@ ptri <- avgtri %>%
   group_by(treatment, Nutrient, Nutrient_t, Inoculation) %>%
   mean_hdi() %>%
   ggplot(aes(x = Nutrient, y = effect)) +
-  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
+  geom_pointinterval(aes(shape = Inoculation,  color = Nutrient), fatten_point = 2.5, interval_size_range = c(0.3, 0.4), position = position_dodge(0.5), fill = "white") +
   facet_wrap(~Nutrient_t, nrow = 1, strip.position = "bottom") +
   theme_bw() +
   theme(axis.title.y = element_blank(),
